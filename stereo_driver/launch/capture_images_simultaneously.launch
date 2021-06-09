@@ -1,0 +1,21 @@
+<launch>
+    <arg name="video_device" default="/dev/video2"/>
+    <arg name="width" default="2560"/>
+    <arg name="height" default="720"/>
+
+    <node name="stereo_driver_node" pkg="usb_cam" type="usb_cam_node" output="screen" >
+        <param name="video_device" value="$(arg video_device)"/>
+        <param name="image_width" value="$(arg width)" />
+        <param name="image_height" value="$(arg height)" />
+    </node>
+
+    <include file="$(find pico_flexx_driver)/launch/pico_flexx_driver.launch" />
+
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find stereo_driver)/rviz/image_capture.rviz"
+          launch-prefix="bash -c 'sleep 3; $0 $@' " />
+
+    <node name="image_saver_node" pkg="image_saver" type="image_saver_node.py" output="screen" required="true"
+          launch-prefix="bash -c 'sleep 5; $0 $@' "/>
+
+
+</launch>
