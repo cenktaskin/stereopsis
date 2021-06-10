@@ -8,7 +8,7 @@ images_path = Path('/home/cenkt/projektarbeit/img_out/')
 index = 0
 # 0 shit 1 only stereo 2 only ir 3 both good
 review_dict = {}
-for img_file in images_path.glob("st_*.jpeg"):
+for img_file in sorted(images_path.glob("st_*.jpeg")):
     pair = img_file.with_stem("ir"+img_file.stem[2:])
     img_st = cv.resize(cv.imread(str(img_file)), (0,0), None, .5, .5)
     img_ir = cv.rotate(cv.imread(str(pair)),cv.ROTATE_180)
