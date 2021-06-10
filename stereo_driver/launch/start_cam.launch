@@ -9,12 +9,7 @@
         <param name="image_height" value="$(arg height)" />
     </node>
 
-    <!--
-    <node name="image_view" pkg="image_view" type="image_view" respawn="false" output="screen">
-        <remap from="image" to="/stereo_driver_node/image_raw"/>
-        <param name="autosize" value="true" />
-        <param name="filename_format" value="/home/cenkt/projektarbeit/data/images_out/frame%04i.jpg"/>
-    </node>-->
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find stereo_driver)/rviz/image_capture.rviz"/>
 
 
 </launch>

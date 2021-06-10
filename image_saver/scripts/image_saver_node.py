@@ -17,7 +17,7 @@ class ImageSaverNode():
         if simult:
             st_sub = message_filters.Subscriber(st_topic, Image)
             ir_sub = message_filters.Subscriber(ir_topic, Image)
-            ts = message_filters.ApproximateTimeSynchronizer([st_sub, ir_sub], 10, 0.1)
+            ts = message_filters.ApproximateTimeSynchronizer([st_sub, ir_sub], 10, 0.01)
             ts.registerCallback(self.callback_duo)
         else:
             st_sub = rospy.Subscriber(st_topic, Image, self.callback_mono)
@@ -42,16 +42,13 @@ class ImageSaverNode():
         except CvBridgeError as e:
             print(e)
         else:
-            time_stereo = stereo_msg.header.stamp
-            time_ir = ir_msg.header.stamp
+            time_stamp = stereo_msg.header.stamp
             output_file_path = Path('/home/cenkt/projektarbeit/img_out/')
-            cv2.imwrite(str(output_file_path.joinpath('st_' + str(time_stereo) + '.jpeg')), stereo_img)
-            cv2.imwrite(str(output_file_path.joinpath('ir_' + str(time_ir) + '.jpeg')), ir_img)
+            cv2.imwrite(str(output_file_path.joinpath('st_' + str(time_stamp) + '.jpeg')), stereo_img)
+            cv2.imwrite(str(output_file_path.joinpath('ir_' + str(time_stamp) + '.jpeg')), ir_img)
             self.image_count += 1
             print(f"Saved {self.image_count} image(s)")
             rospy.sleep(1)
-            exit("EXIT")
-
 
 if __name__ == '__main__':
     stereo_topic = '/stereo_driver_node/image_raw'
