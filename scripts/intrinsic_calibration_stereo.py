@@ -1,51 +1,64 @@
 import numpy as np
 import cv2 as cv
 from pathlib import Path
+import pickle
 
-data_path = Path('/home/cenkt/projektarbeit/calib_images/')
-image_paths = []
+data_path = Path('/home/cenkt/projektarbeit/img_less/')
+image_stems = sorted(data_path.glob('*.jpeg'))
 
-for img_path in data_path.glob("st_*.jpeg"):
-    image_paths.append(img_path)
+checkerboardSize = (6, 9)
 
-image_paths = sorted(image_paths)
+criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
-checkerboardSize = (6,9)
-
-# noinspection PyUnresolvedReferences
-criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)  # ??
-
-# prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
-objp = np.zeros((checkerboardSize[0]*checkerboardSize[1], 3), np.float32)
+objp = np.zeros((checkerboardSize[0] * checkerboardSize[1], 3), np.float32)
 objp[:, :2] = np.mgrid[0:checkerboardSize[0], 0:checkerboardSize[1]].T.reshape(-1, 2)
 
-# Arrays to store object points and image points from all the images.
 objpoints = []  # 3d point in real world space
-imgpoints = []  # 2d points in image plane.
+imgpoints_left = []  # 2d points in image plane.
+imgpoints_right = []
 
-target_cam = 'left'
-
-for file_name in image_paths:
-    stereo_img = cv.imread(str(file_name))
-
-    img = stereo_img[:,:stereo_img.shape[1]//2]
-    if target_cam == 'right':
-        img = stereo_img[:,stereo_img.shape[1]//2:]
-
-    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    # Find the chess board corners
-    ret, corners = cv.findChessboardCorners(gray, checkerboardSize, None)
-
-    # If found, add object points, image points (after refining them)
-    if ret:
+for img_stem in image_stems:
+    stereo_img = cv.imread(str(img_stem))
+    img_left = stereo_img[:, :stereo_img.shape[1] // 2]
+    img_right = stereo_img[:, stereo_img.shape[1] // 2:]
+    gray_left = cv.cvtColor(img_left, cv.COLOR_BGR2GRAY)
+    gray_right = cv.cvtColor(img_right, cv.COLOR_BGR2GRAY)
+    success_left, corners_left = cv.findChessboardCorners(gray_left, checkerboardSize)
+    success_right, corners_right = cv.findChessboardCorners(gray_right, checkerboardSize)
+    if success_left and success_right:
         objpoints.append(objp)
-        corners2 = cv.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
-        imgpoints.append(corners)
-        # Draw and display the corners
-        cv.drawChessboardCorners(img, checkerboardSize, corners2, ret)
-        cv.imshow(file_name.stem, img)
-        cv.waitKey(100)
-    else:
-        print(file_name.stem ,"FAIL")
+        imgpoints_left.append(corners_left)
+        imgpoints_right.append(corners_right)
 
-    cv.destroyAllWindows()
+print("Extracted img points")
+
+ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints_left, gray_left.shape[::-1], cameraMatrix=None,
+                                                  distCoeffs=None, criteria=criteria)
+
+print("Camera Calibrated", ret)
+print("\nCameraMatrix:\n", mtx)
+print("\nDistortion Parameters:\n", dist)
+print("\nRotation vectors:\n", rvecs[0])
+print("\nTranslation Vectors:\n", tvecs[0])
+
+calib_left = {'ret': ret, 'mtx': mtx, 'dist': dist, 'rvecs': rvecs, 'tvecs': tvecs}
+
+
+ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints_right, gray_left.shape[::-1], cameraMatrix=None,
+                                                  distCoeffs=None, criteria=criteria)
+
+print("Camera Calibrated", ret)
+print("\nCameraMatrix:\n", mtx)
+print("\nDistortion Parameters:\n", dist)
+print("\nRotation vectors:\n", rvecs[0])
+print("\nTranslation Vectors:\n", tvecs[0])
+
+
+calib_right = {'ret': ret, 'mtx': mtx, 'dist': dist, 'rvecs': rvecs, 'tvecs': tvecs}
+
+intrinsics = {' left': calib_left, 'right':calib_right}
+
+with open('intrinsic_values','wb') as handle:
+    pickle.dump(intrinsics, handle)
+
+
