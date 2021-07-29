@@ -16,6 +16,7 @@ for img_file in sorted(images_path.glob("st_*.jpeg")):
     img_ir_padded = cv.copyMakeBorder( img_ir, 0,0, diff[1]//2, diff[1]//2, cv.BORDER_CONSTANT)
     numpy_vertical = np.vstack((img_st, img_ir_padded))
     cv.imshow(str(img_file.stem),numpy_vertical)
+    cv.imwrite(str(img_file.stem)+'.png',numpy_vertical)
     keystroke = cv.waitKey(0) & 0xFF
     if keystroke == ord('p'):
         print(img_file.stem,'passed')
