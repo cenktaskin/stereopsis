@@ -3,11 +3,11 @@
     <arg name="width" default="2560"/>
     <arg name="height" default="720"/>
 
-    <node name="stereo_driver_node" pkg="usb_cam" type="usb_cam_node" output="screen" >
+    <node name="stereo_driver_node" pkg="usb_cam" type="usb_cam_node" output="screen">
         <param name="video_device" value="$(arg video_device)"/>
-        <param name="image_width" value="$(arg width)" />
-        <param name="image_height" value="$(arg height)" />
-        <param name="pixel_format" value="mjpeg" />
+        <param name="image_width" value="$(arg width)"/>
+        <param name="image_height" value="$(arg height)"/>
+        <param name="pixel_format" value="mjpeg"/>
     </node>
 
     <node name="stereo_splitter_node" pkg="stereo_driver" type="stereo_splitter_node" output="screen">
