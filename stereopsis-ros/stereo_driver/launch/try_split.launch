@@ -1,0 +1,7 @@
+<launch>
+
+    <node name="stereo_splitter_node" pkg="stereo_driver" type="stereo_splitter_node" output="screen">
+        <param name="input_image_topic" value="/stereo_driver_node"/>
+    </node>
+
+</launch>
