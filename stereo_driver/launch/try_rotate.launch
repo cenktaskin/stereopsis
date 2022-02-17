@@ -1,9 +1,0 @@
-<launch>
-
-    <node name="flipper" pkg="image_flip" type="image_flip" output="screen" >
-        <!--<param name="flip_mode" value="b"/>-->
-        <remap from="image" to="/stereo_driver_node/image_raw"/>
-        <remap from="flipper" to="image_rotated"/>
-    </node>
-
-</launch>
