@@ -1,5 +1,5 @@
 <launch>
-    <arg name="video_device" default="/dev/video2"/>
+    <arg name="video_device" default="/dev/video4"/>
     <arg name="width" default="2560"/>
     <arg name="height" default="720"/>
     <arg name="display" default="false" />
@@ -10,7 +10,7 @@
         <param name="video_device" value="$(arg video_device)"/>
         <param name="image_width" value="$(arg width)" />
         <param name="image_height" value="$(arg height)" />
-        <!--<param name="pixel_format" value="mjpeg" />-->
+        <param name="pixel_format" value="mjpeg" />
         <!--<param name="camera_frame_id" value="stereo_camera" />-->
     </node>
 
