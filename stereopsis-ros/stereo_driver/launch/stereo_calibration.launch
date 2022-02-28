@@ -1,0 +1,25 @@
+<launch>
+    <arg name="video_device" default="/dev/video2"/>
+    <arg name="width" default="2560"/>
+    <arg name="height" default="720"/>
+
+    <node name="stereo_driver_node" pkg="usb_cam" type="usb_cam_node" output="screen">
+        <param name="video_device" value="$(arg video_device)"/>
+        <param name="image_width" value="$(arg width)"/>
+        <param name="image_height" value="$(arg height)"/>
+        <param name="pixel_format" value="mjpeg"/>
+    </node>
+
+    <node name="stereo_splitter_node" pkg="stereo_driver" type="stereo_splitter_node" output="screen">
+        <param name="input_image_topic" value="/stereo_driver_node/image_raw"/>
+    </node>
+
+    <node name="camera_calibrator" pkg="camera_calibration" type="cameracalibrator.py" output="screen"
+          args="--size 9x6 --square 0.025">
+        <remap from="right" to="/stereo_splitter_node/right/image_raw"/>
+        <remap from="left" to="/stereo_splitter_node/left/image_raw"/>
+        <remap from="right_camera" to="/stereo_splitter_node/right"/>
+        <remap from="left_camera" to="/stereo_splitter_node/left"/>
+    </node>
+
+</launch>
