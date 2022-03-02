@@ -1,6 +1,6 @@
 from data_io import data_path
 from cv2 import cv2
-import numpy as np
+import yaml
 
 dataset = '20220301'
 dataset_path = data_path.joinpath('raw', f"data-{dataset}")
@@ -17,3 +17,13 @@ for img_path in dataset_path.glob('st*'):
     if key_press == 32:
         valid_frames.append(img_path.stem[3:])
     cv2.destroyAllWindows()
+
+with open(data_path.joinpath("processed", dataset, f"valid-frames.yaml"), 'w') as f:
+    yaml.dump(valid_frames, f)
+    print(f"Dumped valid frames for dataset {dataset} to {f.name}")
+
+
+with open(data_path.joinpath("processed", dataset, f"valid-frames.yaml"), 'r') as f:
+    print(f"Loaded valid frames for dataset {dataset} from {f.name}")
+    a = yaml.load(f, Loader=yaml.Loader)
+

@@ -7,6 +7,19 @@ import numpy as np
 from random import sample
 from calibration_setup import board_size
 
+
+def back_project(px, z, cam_mat, dst_coeffs, rot_mat, trans, opt_cam_mat):
+    p_ir = cv2.undistortPoints(np.array(px, dtype=np.float64), cam_mat, dst_coeffs, R=rot_mat, P=opt_cam_mat)
+    p_ir = np.append(p_ir, 1).reshape(3, -1)
+
+    left_side = np.linalg.inv(rot_mat) @ np.linalg.inv(opt_cam_mat) @ p_ir
+    right_side = np.linalg.inv(rot_mat) @ trans
+
+    depth_at_point = z * 10 ** 3
+    s = depth_at_point + right_side[2] / left_side[2]
+    return np.linalg.inv(rot_wto2) @ (s * np.linalg.inv(new_cmat) @ p_ir - tra)
+
+
 cam0_index = 0
 cam1_index = 2
 dataset = "20220301"
@@ -24,7 +37,6 @@ frame = sample(list(corner_frames), 1)[0]
 frame_path = data_path.joinpath('raw', f"calibration-{dataset}", f"st_{frame}.tiff")
 
 imgs = [get_img_from_dataset(frame_path, i) for i in range(4)]
-
 
 camera_matrix0 = intrinsics0['intrinsic_matrix']
 camera_matrix1 = intrinsics1['intrinsic_matrix']
@@ -46,17 +58,8 @@ for r in range(0, depth_img.shape[0]):
         if depth_img[r][c] <= 0:
             continue
 
-        p_ir = np.array([c, r], dtype=np.float64)
-        p_ir = cv2.undistortPoints(p_ir, camera_matrix1, intrinsics1['distortion_coeffs'], R=rot_wto2,
-                                   P=new_cmat)
-
-        p_ir = np.append(p_ir, 1).reshape(3, -1)
-        left_side = np.linalg.inv(rot_wto2) @ np.linalg.inv(new_cmat) @ p_ir
-        right_side = np.linalg.inv(rot_wto2) @ tra
-
-        depth_at_point = depth_img[r][c] * 10 ** 3
-        s = depth_at_point + right_side[2] / left_side[2]
-        new_p = np.linalg.inv(rot_wto2) @ (s * np.linalg.inv(new_cmat) @ p_ir - tra)
+        new_p = back_project([c, r], depth_img[r][c], camera_matrix1, intrinsics1['distortion_coeffs'], rot_wto2,
+                             extrinsics1['translation_vector'], new_cmat)
 
         img_pt = cv2.projectPoints(new_p, np.eye(3), np.zeros((3, 1)),
                                    intrinsics0['intrinsic_matrix'], intrinsics0['distortion_coeffs'])
@@ -88,7 +91,6 @@ for r in range(0, depth_img.shape[0]):
 
 
 normalized_depth = cv2.normalize(depth_layer, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
-
 fig = plt.figure()
 plt.subplot(1, 2, 1)
 plt.imshow(imgs[0][:, :, ::-1])
