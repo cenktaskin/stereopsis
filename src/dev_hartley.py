@@ -1,6 +1,6 @@
 from cv2 import cv2
 import matplotlib.pyplot as plt
-from dataio import load_camera_info, get_img_from_dataset, data_path, get_random_calibration_frame
+from data_io import load_camera_info, get_img_from_dataset, data_path, get_random_calibration_frame
 from pathlib import Path
 import numpy as np
 from random import sample

@@ -3,7 +3,7 @@ from cv2 import cv2
 import numpy as np
 
 from calibration_setup import board
-from dataio import load_camera_info, save_camera_info, img_size
+from data_io import load_camera_info, save_camera_info, img_size
 
 camera_index = 5
 

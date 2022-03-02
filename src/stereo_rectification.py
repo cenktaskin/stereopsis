@@ -1,6 +1,6 @@
 from cv2 import cv2
 
-from dataio import save_camera_info, load_camera_info, get_random_calibration_frame
+from data_io import save_camera_info, load_camera_info, get_random_calibration_frame
 from time import time
 from calibration_setup import img_size
 from calibration_detection import get_img_from_dataset

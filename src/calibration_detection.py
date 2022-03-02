@@ -2,7 +2,7 @@ from cv2 import cv2
 import numpy as np
 
 from calibration_setup import board_size
-from dataio import get_img_from_dataset, save_camera_info, data_path, img_size
+from data_io import get_img_from_dataset, save_camera_info, data_path, img_size
 
 # some constants for functions below
 # they represent corresponding values for different size/color images

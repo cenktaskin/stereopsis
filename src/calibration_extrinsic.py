@@ -3,7 +3,7 @@ from time import time
 import numpy as np
 
 from calibration_setup import board
-from dataio import load_camera_info, save_camera_info
+from data_io import load_camera_info, save_camera_info
 
 cam0_index = 0  # fixed
 cam1_index = 2
