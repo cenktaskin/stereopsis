@@ -6,7 +6,7 @@ from calibration_setup import board
 from dataio import load_camera_info, save_camera_info
 
 cam0_index = 0  # fixed
-cam1_index = 1
+cam1_index = 2
 
 dataset = '20220301'
 

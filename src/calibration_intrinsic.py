@@ -2,10 +2,10 @@ from time import time
 from cv2 import cv2
 import numpy as np
 
-from calibration_setup import board, img_size
-from dataio import load_camera_info, save_camera_info
+from calibration_setup import board
+from dataio import load_camera_info, save_camera_info, img_size
 
-camera_index = 0
+camera_index = 5
 
 dataset = '20220301'
 corners_dict = load_camera_info(camera_index, 'corners', dataset)

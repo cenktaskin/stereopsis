@@ -1,8 +1,7 @@
 import matplotlib.pyplot as plt
 from cv2 import cv2
 
-from dataio import load_camera_info, get_random_calibration_frame, data_path, get_img_from_dataset, upsample_ir_img, \
-    parse_stereo_img
+from dataio import load_camera_info, data_path, get_img_from_dataset, upsample_ir_img, parse_stereo_img
 import numpy as np
 
 cam0_index = 0
@@ -38,15 +37,18 @@ print(np.max(normalized))
 print(np.min(normalized))
 plt.figure()
 plt.imshow(normalized, cmap='gray')
+
+
 def onclick(event):
     print('button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
           (event.button, event.x, event.y, event.xdata, event.ydata))
     plt.plot(event.xdata, event.ydata, ',')
     fig.canvas.draw()
+
+
 cid = fig.canvas.mpl_connect('button_press_event', onclick)
 plt.plot([x], [y], marker='o', markersize=3, color="red")
 plt.show()
-
 
 plt.figure()
 plt.imshow(dp_img, cmap='gray')
@@ -55,10 +57,8 @@ y = 463
 plt.plot([x], [y], marker='o', markersize=3, color="red")
 plt.show()
 
-
-
 plt.figure()
-plt.imshow(cv2.GaussianBlur(dp_img,(5,5),0), cmap='gray')
+plt.imshow(cv2.GaussianBlur(dp_img, (5, 5), 0), cmap='gray')
 x = 567
 y = 463
 plt.plot([x], [y], marker='o', markersize=3, color="red")
@@ -69,15 +69,18 @@ corner_rgb = np.array([491.543011, 537.577419])
 
 fig = plt.figure()
 plt.imshow(left_img[:, :, ::-1])
+
+
 def onclick(event):
     print('button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
           (event.button, event.x, event.y, event.xdata, event.ydata))
     plt.plot(event.xdata, event.ydata, ',')
     fig.canvas.draw()
+
+
 cid = fig.canvas.mpl_connect('button_press_event', onclick)
 plt.plot([x], [y], marker='o', markersize=3, color="red")
 plt.show()
-
 
 p_ir = np.append(corner_ir, 1).reshape(3, -1)
 print(f"{p_ir=}")

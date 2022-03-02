@@ -1,18 +1,18 @@
 from cv2 import cv2
 import numpy as np
 
-from calibration_setup import board_size, img_size
-from dataio import get_img_from_dataset, save_camera_info, data_path
+from calibration_setup import board_size
+from dataio import get_img_from_dataset, save_camera_info, data_path, img_size
 
 # some constants for functions below
 # they represent corresponding values for different size/color images
-win_scaling = {0: 2, 1: 2, 2: 7, 3: 2, 4: 2}
-subpixel_win_size = {0: (7, 7), 1: (7, 7), 2: (3, 3), 3: (11, 11)}
+win_scaling = {0: 2, 1: 2, 2: 7, 4: 7, 5: 2}
+subpixel_win_size = {0: (7, 7), 1: (7, 7), 2: (3, 3), 4: (3, 3), 5: (7, 7)}
 flags = {0: cv2.CALIB_CB_FAST_CHECK + cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_NORMALIZE_IMAGE,
          1: cv2.CALIB_CB_FAST_CHECK + cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_NORMALIZE_IMAGE,
-         #2: cv2.CALIB_CB_ADAPTIVE_THRESH,
          2: None,
-         3: cv2.CALIB_CB_ADAPTIVE_THRESH
+         4: cv2.CALIB_CB_ADAPTIVE_THRESH,
+         5: cv2.CALIB_CB_ADAPTIVE_THRESH
          }
 
 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.0001)
@@ -29,7 +29,7 @@ def corner_finder(img_paths, cam_index, review=True):
             gray_img = cv2.normalize(img, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX).astype(np.uint8)
         ret, corners = cv2.findChessboardCorners(image=gray_img, patternSize=board_size, flags=flags[cam_index])
         if ret:
-            if camera_index < 4:  # in up upsampled img cornerSubPix makes corners worse
+            if camera_index != 4:  # in up upsampled img cornerSubPix makes corners worse
                 corners = cv2.cornerSubPix(gray_img, corners, subpixel_win_size[cam_index], (-1, -1), criteria)
             if review:
                 if not review_image(img, corners, ret, cam_index):
@@ -44,7 +44,7 @@ def corner_finder(img_paths, cam_index, review=True):
     return corner_wiki
 
 
-def review_image(img, corners, ret, cam_index, window_scale_factor=2):
+def review_image(img, corners, ret, cam_index):
     if cam_index >= 2:
         gray_img = cv2.normalize(img, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX).astype(np.uint8)
         img = cv2.cvtColor(gray_img, cv2.COLOR_GRAY2BGR)
@@ -64,11 +64,11 @@ if __name__ == "__main__":
     calibration_images_dir = data_path.joinpath('raw', f"calibration-{dataset_name}")
     calibration_images = sorted(calibration_images_dir.glob('st*'))
 
-    camera_index = 0
+    camera_index = 5
     manual_review = True
     save_results = True
 
     corners_by_frame = corner_finder(calibration_images, camera_index, review=manual_review)
 
-    if save_results:
+    if save_results and len(corners_by_frame.keys()) > 0:
         save_camera_info(corners_by_frame, camera_index, 'corners', dataset_name)
