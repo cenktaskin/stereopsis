@@ -1,7 +1,6 @@
 from cv2 import cv2
 import matplotlib.pyplot as plt
 from dataio import load_camera_info, get_img_from_dataset, data_path
-from pathlib import Path
 import numpy as np
 from random import sample
 
@@ -40,10 +39,8 @@ ir_img = get_img_from_dataset(sample_path, cam1_index)
 
 fund_mat = extrinsics1['fundamental_matrix']
 
-
 pts0 = corners0[sample_index]
 pts1 = corners1[sample_index]
-
 
 rgb_img = cv2.cvtColor(rgb_img, cv2.COLOR_BGR2GRAY)
 # Find epilines corresponding to points in right image (second image) and
@@ -57,8 +54,7 @@ img5, img6 = drawlines(rgb_img, ir_img, lines1, list(pts0), list(pts1))
 lines2 = cv2.computeCorrespondEpilines(pts0.reshape(-1, 1, 2), 1, fund_mat)
 lines2 = lines2.reshape(-1, 3)
 img3, img4 = drawlines(ir_img, rgb_img, lines2, list(pts1), list(pts0))
-plt.subplot(121),plt.imshow(img5)
+plt.subplot(121), plt.imshow(img5)
 plt.subplot(122), plt.imshow(img3)
 plt.savefig('trial.png')
 plt.show()
-

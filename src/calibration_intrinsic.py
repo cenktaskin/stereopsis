@@ -5,14 +5,11 @@ import numpy as np
 from calibration_setup import board, img_size
 from dataio import load_camera_info, save_camera_info
 
-camera_index = 4
+camera_index = 0
 
-corners_dict = load_camera_info(camera_index, 'corners')
+dataset = '20220301'
+corners_dict = load_camera_info(camera_index, 'corners', dataset)
 corners = list(corners_dict.values())
-
-# downsample the corners if needed
-# frames = sample(list(all_corners_dict.keys()), max_frame_count)
-# corners = [all_corners_dict[k] for k in frames]
 
 print(f"Calibrating with {len(corners)} frames...")
 start_time = time()
@@ -32,4 +29,4 @@ print(f"\nCamera calibrated in {time() - start_time:.2f} seconds \n"
       f"Rotation vectors (first):\n {intrinsics['rotation_vectors'][0]} \n\n"
       f"Translation vectors (first):\n {intrinsics['translation_vectors'][0]}")
 
-save_camera_info(camera_index, 'intrinsics')
+save_camera_info(intrinsics, camera_index, 'intrinsics', dataset)

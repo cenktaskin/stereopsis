@@ -6,14 +6,17 @@ from calibration_setup import board
 from dataio import load_camera_info, save_camera_info
 
 cam0_index = 0  # fixed
-cam1_index = 2
+cam1_index = 1
 
-corners0 = load_camera_info(cam0_index, 'corners')
-corners1 = load_camera_info(cam1_index, 'corners')
-intrinsics0 = load_camera_info(cam0_index, 'intrinsics')
-intrinsics1 = load_camera_info(cam1_index, 'intrinsics')
+dataset = '20220301'
+
+corners0 = load_camera_info(cam0_index, 'corners', dataset)
+corners1 = load_camera_info(cam1_index, 'corners', dataset)
+intrinsics0 = load_camera_info(cam0_index, 'intrinsics', dataset)
+intrinsics1 = load_camera_info(cam1_index, 'intrinsics', dataset)
 
 common_frames = corners0.keys() & corners1.keys()
+print(f"Calibrating with {len(common_frames)} frames...")
 
 start_time = time()
 # Calculating extrinsics
@@ -24,7 +27,8 @@ calibration_output = cv2.stereoCalibrate(objectPoints=np.tile(board, (len(common
                                          cameraMatrix2=intrinsics1['intrinsic_matrix'],
                                          distCoeffs1=intrinsics0['distortion_coeffs'],
                                          distCoeffs2=intrinsics1['distortion_coeffs'],
-                                         imageSize=None)
+                                         imageSize=None,
+                                         )
 
 extrinsics_keys = ["return_value", "_", "_", "_", "_", "rotation_matrix", "translation_vector",
                    "essential_matrix", "fundamental_matrix"]
@@ -38,4 +42,4 @@ print(f"\nCamera calibrated in {time() - start_time:.2f} seconds \n"
       f"Essential Matrix:\n {extrinsics['essential_matrix']} \n\n"
       f"Fundamental Matrix:\n {extrinsics['fundamental_matrix']}")
 
-save_camera_info(extrinsics, cam1_index, 'extrinsics')
+save_camera_info(extrinsics, cam1_index, 'extrinsics', dataset)

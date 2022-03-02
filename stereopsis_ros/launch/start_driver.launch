@@ -26,7 +26,7 @@
     </group>
 
     <group if="$(arg split)">
-        <node name="stereo_splitter_node" pkg="stereo_driver" type="stereo_splitter_node" output="screen">
+        <node name="stereo_splitter_node" pkg="stereopsis_ros" type="stereo_splitter_node" output="screen">
             <param name="input_image_topic" value="/stereo_driver_node/image_raw/"/>
         </node>
     </group>

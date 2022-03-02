@@ -1,4 +1,3 @@
-import cv2.cv2
 import matplotlib.pyplot as plt
 from cv2 import cv2
 
@@ -7,7 +6,7 @@ from dataio import load_camera_info, get_random_calibration_frame, data_path, ge
 import numpy as np
 
 cam0_index = 0
-cam1_index = 4
+cam1_index = 2
 
 intrinsics0 = load_camera_info(cam0_index, 'intrinsics')
 intrinsics1 = load_camera_info(cam1_index, 'intrinsics')
@@ -29,14 +28,22 @@ dp_img = cv2.imread("dp_1646059598491102197.tiff", flags=cv2.IMREAD_UNCHANGED)
 dp_img = upsample_ir_img(cv2.flip(dp_img, -1), resize=True)
 
 normalized = cv2.normalize(ir_img, dst=None, alpha=0, beta=65535, norm_type=cv2.NORM_MINMAX)
+normalized2 = cv2.normalize(ir_img, dst=None, norm_type=cv2.NORM_MINMAX)
 
+print(np.max(normalized))
+print(np.max(normalized2))
+exit()
 print(normalized.dtype)
 print(np.max(normalized))
 print(np.min(normalized))
 plt.figure()
 plt.imshow(normalized, cmap='gray')
-x = 567
-y = 463
+def onclick(event):
+    print('button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
+          (event.button, event.x, event.y, event.xdata, event.ydata))
+    plt.plot(event.xdata, event.ydata, ',')
+    fig.canvas.draw()
+cid = fig.canvas.mpl_connect('button_press_event', onclick)
 plt.plot([x], [y], marker='o', markersize=3, color="red")
 plt.show()
 
@@ -62,18 +69,14 @@ corner_rgb = np.array([491.543011, 537.577419])
 
 fig = plt.figure()
 plt.imshow(left_img[:, :, ::-1])
-
-
 def onclick(event):
     print('button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
           (event.button, event.x, event.y, event.xdata, event.ydata))
     plt.plot(event.xdata, event.ydata, ',')
     fig.canvas.draw()
-
-
 cid = fig.canvas.mpl_connect('button_press_event', onclick)
 plt.plot([x], [y], marker='o', markersize=3, color="red")
-# plt.show()
+plt.show()
 
 
 p_ir = np.append(corner_ir, 1).reshape(3, -1)
