@@ -3,8 +3,10 @@ import numpy as np
 
 # cam0 : stereo_left
 # cam1 : stereo_right
-# cam2 : ir
-# cam3 : ir_upsampled
+# cam2 : ir_16_bit_channel
+# cam3 : ir_16_bit_channel_upsample
+# cam4 : ir_8_bit_channel
+# cam5 : depth_map
 
 def create_board(n0, n1, square_size=1):
     # creates a board of n0xn1
@@ -16,6 +18,6 @@ def create_board(n0, n1, square_size=1):
 # some constants for this case
 img_size = {0: (720, 1280), 1: (720, 1280), 2: (171, 224), 3: (720, 1280), 4: (720, 1280)}
 
-square_size = 25.5 # in mm
+square_size = 25.5  # in mm
 board_size = (6, 9)
 board = create_board(*board_size, square_size)
