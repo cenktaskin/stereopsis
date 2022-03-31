@@ -1,7 +1,6 @@
 from cv2 import cv2
 import matplotlib.pyplot as plt
-from data_io import load_camera_info, get_img_from_dataset, data_path, img_size
-from pathlib import Path
+from src.data_io import load_camera_info, get_img_from_dataset, data_path, img_size
 import numpy as np
 from random import sample
 

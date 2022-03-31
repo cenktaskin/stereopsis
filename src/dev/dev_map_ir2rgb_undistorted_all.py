@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 from cv2 import cv2
 
-from data_io import load_camera_info, data_path, get_img_from_dataset, upsample_ir_img, parse_stereo_img, \
+from src.data_io import load_camera_info, data_path, get_img_from_dataset, upsample_ir_img, parse_stereo_img, \
     get_random_frame, img_size
 import numpy as np
 from random import sample
-from calibration_setup import board_size
+from src.calibration_setup import board_size
 
 cam0_index = 0
 cam1_index = 2

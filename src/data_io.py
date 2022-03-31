@@ -8,9 +8,9 @@ import yaml
 # cam2 : ir_16_bit_channel
 # cam3 : depth_map
 # cam4 : ir_8_bit_channel
-# cam5 : ir_16_bit_channel_upsample
+# cam5 : ir_16_bit_channel_upsampled
 
-data_path = Path.cwd().joinpath('../data/').resolve()
+data_path = Path(__file__).joinpath('../../data/').resolve()
 cam_suffix = {2: "ir", 3: "dp", 4: "i8"}
 img_size = {0: (720, 1280), 1: (720, 1280), 2: (171, 224), 3: (171, 224), 4: (171, 224), 5: (720, 1280)}
 

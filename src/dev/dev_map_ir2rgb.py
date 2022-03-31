@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from cv2 import cv2
 
-from data_io import load_camera_info, data_path, get_img_from_dataset, upsample_ir_img, parse_stereo_img, \
+from src.data_io import load_camera_info, data_path, get_img_from_dataset, upsample_ir_img, parse_stereo_img, \
     get_random_frame
 import numpy as np
 from random import sample

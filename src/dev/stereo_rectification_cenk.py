@@ -1,9 +1,10 @@
 import yaml
 from cv2 import cv2
 from time import time
-from calibration_setup import *
+from src.calibration_setup import *
 from random import sample
-from calibration_detection import get_img_from_dataset
+from src.calibration_detection import get_img_from_dataset
+from src.data_io import data_path, img_size
 
 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 10 ** -6)
 
@@ -141,6 +142,5 @@ undistort_and_show(r0, r1, p0, p1)
 
 ## check whether the previous steps are valid by checking the calibraiton that is already done
 # do distortion to image from cam2
-
 
 # maybe try upsampling?

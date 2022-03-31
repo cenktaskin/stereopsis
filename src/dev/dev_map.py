@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 from cv2 import cv2
 
-from data_io import load_camera_info, data_path, get_img_from_dataset, upsample_ir_img, parse_stereo_img, \
+from src.data_io import load_camera_info, data_path, get_img_from_dataset, upsample_ir_img, parse_stereo_img, \
     get_random_frame, img_size
 import numpy as np
 from random import sample
-from calibration_setup import board_size
+from src.calibration_setup import board_size
 
 
 def back_project(px, z, cam_mat, dst_coeffs, rot_mat, trans, opt_cam_mat):
@@ -89,6 +89,12 @@ for r in range(0, depth_img.shape[0]):
             figManager.resize(*figManager.window.maxsize())
             plt.show()
 
+plt.figure()
+plt.subplot(1, 2, 1)
+plt.hist(depth_layer)
+plt.subplot(1, 2, 2)
+plt.hist(depth_img)
+plt.show()
 
 normalized_depth = cv2.normalize(depth_layer, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
 fig = plt.figure()

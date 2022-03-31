@@ -26,4 +26,3 @@ with open(data_path.joinpath("processed", dataset, f"valid-frames.yaml"), 'w') a
 with open(data_path.joinpath("processed", dataset, f"valid-frames.yaml"), 'r') as f:
     print(f"Loaded valid frames for dataset {dataset} from {f.name}")
     a = yaml.load(f, Loader=yaml.Loader)
-

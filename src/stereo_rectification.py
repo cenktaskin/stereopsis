@@ -2,7 +2,6 @@ from cv2 import cv2
 
 from data_io import save_camera_info, load_camera_info, img_size
 from time import time
-from calibration_detection import get_img_from_dataset
 
 # criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 10 ** -6)
 dataset = "20220301"
