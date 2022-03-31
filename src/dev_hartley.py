@@ -1,10 +1,9 @@
 from cv2 import cv2
 import matplotlib.pyplot as plt
-from data_io import load_camera_info, get_img_from_dataset, data_path, get_random_calibration_frame
+from data_io import load_camera_info, get_img_from_dataset, data_path, img_size
 from pathlib import Path
 import numpy as np
 from random import sample
-from calibration_setup import img_size
 
 
 def drawlines(img1, img2, lines, pts1, pts2):
@@ -27,15 +26,16 @@ def drawlines(img1, img2, lines, pts1, pts2):
 cam0_index = 0
 cam1_index = 2
 
-corners0 = load_camera_info(cam0_index, 'corners')
-corners1 = load_camera_info(cam1_index, 'corners')
-intrinsics0 = load_camera_info(cam0_index, 'intrinsics')
-intrinsics1 = load_camera_info(cam1_index, 'intrinsics')
-extrinsics1 = load_camera_info(cam1_index, 'extrinsics')
+dataset = "20220301"
+corners0 = load_camera_info(cam0_index, 'corners', dataset)
+corners1 = load_camera_info(cam1_index, 'corners', dataset)
+intrinsics0 = load_camera_info(cam0_index, 'intrinsics', dataset)
+intrinsics1 = load_camera_info(cam1_index, 'intrinsics', dataset)
+extrinsics1 = load_camera_info(cam1_index, 'extrinsics', dataset)
 
 common_frames = corners0.keys() & corners1.keys()
 sample_index = sample(list(common_frames), 1)[0]
-sample_path = data_path.joinpath("raw", "calibration-images-20210609", f"st_{sample_index}.jpeg")
+sample_path = data_path.joinpath("raw", f"calibration-{dataset}", f"st_{sample_index}.tiff")
 rgb_img = get_img_from_dataset(sample_path, cam0_index)
 ir_img = get_img_from_dataset(sample_path, cam1_index)
 
