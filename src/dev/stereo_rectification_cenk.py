@@ -1,37 +1,24 @@
-import yaml
 from cv2 import cv2
 from time import time
 from src.calibration_setup import *
 from random import sample
-from src.calibration_detection import get_img_from_dataset
-from src.data_io import data_path, img_size
-
-criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 10 ** -6)
-
-extrinsics_wiki = {}
-intrinsics_wiki = {}
-for i in range(3):
-    with open(data_path.joinpath("processed", f"cam{i}-intrinsics.yaml"), 'rb') as f:
-        intrinsics_wiki[i] = yaml.load(f, Loader=yaml.Loader)
-        print(f"Loaded intrinsics from {f.name}")
-
-    if i == 0:
-        continue  # since there are no extrinsics for cam0
-
-    with open(data_path.joinpath("processed", f"cam{i}-extrinsics.yaml"), 'rb') as f:
-        extrinsics_wiki[i] = yaml.load(f, Loader=yaml.Loader)
-        print(f"Loaded extrinsics from {f.name}")
+from src.data_io import data_path, load_camera_info, get_img_from_dataset, img_size
 
 cam0_index = 0  # fixed
 cam1_index = 2
+
+dataset = "20220301"
+intrinsics0 = load_camera_info(cam0_index, 'intrinsics', dataset)
+intrinsics1 = load_camera_info(cam1_index, 'intrinsics', dataset)
+extrinsics1 = load_camera_info(cam1_index, 'extrinsics', dataset)
 
 start_time = time()
 
 
 # Calculating intrinsics
 def stereo_rectify(cam0_index, cam1_index):
-    T = extrinsics_wiki[cam1_index]['translation_vector'].flatten()
-    R = extrinsics_wiki[cam1_index]['rotation_matrix']
+    T = extrinsics1['translation_vector'].flatten()
+    R = extrinsics1['rotation_matrix']
 
     # This part needs attention
     # I did it since the result was flipped and one git implementation said
@@ -58,8 +45,8 @@ def stereo_rectify(cam0_index, cam1_index):
     # print(np.eye(3))
     # print(np.zeros)
     # print(np.vstack((T[0], np.zeros((2, 1)))))
-    Pl = intrinsics_wiki[cam0_index]['intrinsic_matrix'] @ np.hstack((np.eye(3), np.zeros((3, 1))))
-    Pr = intrinsics_wiki[cam1_index]['intrinsic_matrix'] @ np.hstack((np.eye(3), np.vstack((T[0], np.zeros((2, 1))))))
+    Pl = intrinsics0['intrinsic_matrix'] @ np.hstack((np.eye(3), np.zeros((3, 1))))
+    Pr = intrinsics1['intrinsic_matrix'] @ np.hstack((np.eye(3), np.vstack((T[0], np.zeros((2, 1))))))
 
     return Rl, Rr, Pl, Pr
 
@@ -69,8 +56,8 @@ def undistort_and_show(r0, r1, p0, p1):
     calibration_images = sorted(calibration_imgs_dir.glob('st*.jpeg'))
     sample_index = sample(calibration_images, 1)[0]
 
-    mapx, mapy = cv2.initUndistortRectifyMap(cameraMatrix=intrinsics_wiki[cam0_index]['intrinsic_matrix'],
-                                             distCoeffs=intrinsics_wiki[cam0_index]['distortion_coeffs'],
+    mapx, mapy = cv2.initUndistortRectifyMap(cameraMatrix=intrinsics0['intrinsic_matrix'],
+                                             distCoeffs=intrinsics0['distortion_coeffs'],
                                              R=r0,
                                              newCameraMatrix=p0,
                                              size=img_size[cam0_index][::-1],
@@ -80,8 +67,8 @@ def undistort_and_show(r0, r1, p0, p1):
     dst = cv2.remap(sample_image0, mapx, mapy, cv2.INTER_LINEAR)
     res0 = np.vstack((sample_image0, dst))
 
-    mapx, mapy = cv2.initUndistortRectifyMap(cameraMatrix=intrinsics_wiki[cam1_index]['intrinsic_matrix'],
-                                             distCoeffs=intrinsics_wiki[cam1_index]['distortion_coeffs'],
+    mapx, mapy = cv2.initUndistortRectifyMap(cameraMatrix=intrinsics1['intrinsic_matrix'],
+                                             distCoeffs=intrinsics1['distortion_coeffs'],
                                              R=r1,
                                              newCameraMatrix=p1,
                                              size=img_size[cam1_index][::-1],
@@ -105,13 +92,13 @@ def undistort_and_show(r0, r1, p0, p1):
         cv2.waitKey()
 
 
-calibration_output = cv2.stereoRectify(cameraMatrix1=intrinsics_wiki[cam0_index]['intrinsic_matrix'],
-                                       cameraMatrix2=intrinsics_wiki[cam1_index]['intrinsic_matrix'],
-                                       distCoeffs1=intrinsics_wiki[cam0_index]['distortion_coeffs'],
-                                       distCoeffs2=intrinsics_wiki[cam1_index]['distortion_coeffs'],
+calibration_output = cv2.stereoRectify(cameraMatrix1=intrinsics0['intrinsic_matrix'],
+                                       cameraMatrix2=intrinsics1['intrinsic_matrix'],
+                                       distCoeffs1=intrinsics0['distortion_coeffs'],
+                                       distCoeffs2=intrinsics1['distortion_coeffs'],
                                        imageSize=img_size[0],  # when imgsize=None P1 and P2 are nan
-                                       R=extrinsics_wiki[cam1_index]['rotation_matrix'],
-                                       T=extrinsics_wiki[cam1_index]['translation_vector'])
+                                       R=extrinsics1['rotation_matrix'],
+                                       T=extrinsics1['translation_vector'])
 
 rectification_keys = ["R1", "R2", "P1", "P2", "Q", "roi1", "roi2"]
 
