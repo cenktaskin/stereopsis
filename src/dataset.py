@@ -32,7 +32,8 @@ class StereopsisDataset(Dataset):
             image = self.transform(image)
         if self.target_transform:
             label = self.target_transform(label)
-        return image, label
+        l_img, r_img = torch.split(x, x.shape[2] // 2, dim=2)
+        return l_img, r_img, label
 
 
 class LabelTransformer(object):
@@ -56,6 +57,10 @@ class LabelTransformer(object):
     def __call__(self, sample):
         sample = self.flip_label(sample)
         return self.crop_label(sample)
+
+
+def parse_stereo_img(st_img, cam):
+    return st_img[:, st_img.shape[1] * cam // 2:st_img.shape[1] * (cam + 1) // 2]
 
 
 def np_to_tensor(sample):
