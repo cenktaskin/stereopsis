@@ -64,21 +64,22 @@ def np_to_tensor(sample):
     return torch.from_numpy(sample)
 
 
-data_path = Path("/home/cenkt/git/stereopsis/data/raw/data-20220301/")
+if __name__ == "__main__":
+    data_path = Path("/home/cenkt/git/stereopsis/data/raw/data-20220301/")
 
-label_transformer = LabelTransformer(h=120, w=214)
-dataset = StereopsisDataset(data_path, transform=transforms.Compose([np_to_tensor]),
-                            target_transform=transforms.Compose([label_transformer]))
-dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
-train_features, train_labels = next(iter(dataloader))
-print(f"Feature batch shape: {train_features.size()}")
-print(f"Labels batch shape: {train_labels.size()}")
-x = train_features[0].squeeze()
-y = train_labels[0]
-plt.subplot(2, 1, 1)
-plt.title(f"Training sample with type {type(x)}, shape {x.shape}")
-plt.imshow(x.permute(1, 2, 0))  # back to np dimension order
-plt.subplot(2, 1, 2)
-plt.title(f"Training sample with type {type(y)}, shape {y.shape}")
-plt.imshow(y)
-plt.show()
+    label_transformer = LabelTransformer(h=120, w=214)
+    dataset = StereopsisDataset(data_path, transform=transforms.Compose([np_to_tensor]),
+                                target_transform=transforms.Compose([label_transformer]))
+    dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
+    train_features, train_labels = next(iter(dataloader))
+    print(f"Feature batch shape: {train_features.size()}")
+    print(f"Labels batch shape: {train_labels.size()}")
+    x = train_features[0].squeeze()
+    y = train_labels[0]
+    plt.subplot(2, 1, 1)
+    plt.title(f"Training sample with type {type(x)}, shape {x.shape}")
+    plt.imshow(x.permute(1, 2, 0))  # back to np dimension order
+    plt.subplot(2, 1, 2)
+    plt.title(f"Training sample with type {type(y)}, shape {y.shape}")
+    plt.imshow(y)
+    plt.show()
