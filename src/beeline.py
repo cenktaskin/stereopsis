@@ -9,6 +9,7 @@ class BeelineModel(nn.Module):
         self.conv2 = nn.Conv2d(3, 1, 3, stride=3, padding=1)
 
     def forward(self, x):
+        x = x.float()
         l_img, r_img = split(x, x.shape[2]//2, dim=2)
 
         x1 = self.conv1(l_img)
