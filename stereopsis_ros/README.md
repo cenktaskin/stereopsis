@@ -4,6 +4,12 @@ Another aspect of project stereopsis, drivers and such.
 
 ## Notes to for setup
 
+### Dependencies
+For a clean install of ros-base and ubuntu20
+>~~~
+>sudo apt install build-essential ros-noetic-vision-opencv ros-noetic-image-common
+>~~~
+
 - Create your catkin-ws.
 - Clone this repo as a package to the src/ .
 - Clone [pico-flexx-driver repo](https://github.com/code-iai/pico_flexx_driver)  to the src/ directory as another package. (A symlink would work)

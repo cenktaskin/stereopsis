@@ -1,6 +1,7 @@
 <launch>
-    <include file="$(find stereopsis_ros)/launch/start_driver.launch" />
+    <include file="start_stereo.launch" />
 
+    <!--This part should be replaced with image_view-->
     <node type="rviz" name="rviz" pkg="rviz" args="-d $(find stereopsis_ros)/rviz/image_capture.rviz"/>
 
     <node name="image_saver_node" pkg="stereopsis_ros" type="image_saver_node.py" output="screen" required="true"
