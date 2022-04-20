@@ -1,0 +1,6 @@
+<launch>
+ <node pkg="rosbag" type="record" name="rosbag_recorder"
+       args="record -o /pico_flexx/image_depth /stereo_driver_node/image_raw"/>
+
+</launch>
+
