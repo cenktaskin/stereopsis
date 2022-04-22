@@ -1,0 +1,11 @@
+<launch>
+    <include file="stereo_driver.launch" />
+
+    <include file="$(find pico_flexx_driver)/launch/pico_flexx_driver.launch" />
+
+    <include file="display_stream.launch" />
+
+    <node name="image_saver_node" pkg="stereopsis_ros" type="image_saver_node.py" output="screen" required="true"
+          launch-prefix="bash -c 'sleep 3; $0 $@' "/>
+
+</launch>

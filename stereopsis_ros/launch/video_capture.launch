@@ -1,0 +1,15 @@
+<launch>
+    <include file="stereo_driver.launch" />
+
+    <include file="$(find pico_flexx_driver)/launch/pico_flexx_driver.launch" />
+
+    <include file="display_stream.launch" />
+
+    <node name="bag_recorder" pkg="rosbag" type="record"
+          args="record -o /tmp/trial
+          /pico_flexx/image_depth
+          /pico_flexx/image_mono16
+          /pico_flexx/image_mono8
+          /stereo_driver_node/image_raw/" />
+
+</launch>

@@ -1,0 +1,28 @@
+<launch>
+    <arg name="video_device" default="/dev/video4"/>
+    <arg name="width" default="2560"/>
+    <arg name="height" default="720"/>
+    <arg name="display" default="false" />
+    <arg name="split" default="false" />
+
+    <node name="stereo_driver" pkg="usb_cam" type="usb_cam_node" output="screen" >
+        <param name="video_device" value="$(arg video_device)"/>
+        <param name="image_width" value="$(arg width)" />
+        <param name="image_height" value="$(arg height)" />
+        <param name="pixel_format" value="mjpeg" />
+    </node>
+
+    <group if="$(arg split)">
+        <node name="stereo_splitter" pkg="stereopsis_ros" type="stereo_splitter_node" output="screen">
+            <param name="input_image_topic" value="/stereo_driver/image_raw/"/>
+        </node>
+    </group>
+
+    <group if="$(arg display)">
+        <node name="image_view" pkg="image_view" type="image_view" respawn="false" output="screen" unless="$(arg split)">
+            <remap from="image" to="/usb_cam/image_raw"/>
+            <param name="autosize" value="true" />
+        </node>
+    </group>
+
+</launch>
