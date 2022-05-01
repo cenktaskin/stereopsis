@@ -4,7 +4,7 @@ from torchvision import transforms
 from dataset import LabelTransformer, StereopsisDataset, np_to_tensor
 
 
-def create_dataset(data_path, batch_size=32, test_split_ratio=0.9):
+def create_dataloaders(data_path, batch_size=32, test_split_ratio=0.9):
     label_transformer = LabelTransformer(h=120, w=214)
     dataset = StereopsisDataset(data_path, transform=transforms.Compose([np_to_tensor]),
                                 target_transform=transforms.Compose([label_transformer]))
