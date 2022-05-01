@@ -1,4 +1,4 @@
-from beeline import BeelineModel
+from models import BeelineModel
 from dataset import *
 import torch
 from torch.utils.data import Subset

@@ -1,9 +1,5 @@
 import torch
 
-sh_check_repo = 'if [ -d stereopsis ]; then echo "Repo already cloned, pulling"; cd stereopsis; git checkout ' \
-                '$current_branch ; git pull ;  else git clone -b $current_branch $URL ; fi '
-
-
 def train(dataloader, model, loss_fn, optimizer, device="cuda"):
     size = len(dataloader.dataset)
     model.train()
@@ -22,3 +18,17 @@ def train(dataloader, model, loss_fn, optimizer, device="cuda"):
         if batch % 4 == 0:
             loss, current = loss.item(), batch * len(x1)
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+
+
+def test(dataloader, model, loss_fn, device="cuda"):
+    size = len(dataloader.dataset)
+    num_batches = len(dataloader)
+    model.eval()
+    test_loss = 0
+    with torch.no_grad():
+        for x1, x2, y in dataloader:
+            x1, x2, y = x1.to(device), x2.to(device), y.to(device)
+            pred = model(x1,x2)
+            test_loss += loss_fn(pred, y).item()
+    test_loss /= num_batches
+    print(f"Test Error: \n Avg loss: {test_loss:>8f} \n")
