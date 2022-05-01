@@ -21,6 +21,7 @@ def create_dataloaders(data_path, batch_size=32, test_split_ratio=0.9):
 def train(dataloader, model, loss_fn, optimizer, device="cuda"):
     size = len(dataloader.dataset)
     model.train()
+    seen_samples = 0
     for batch, (x1, x2, y) in enumerate(dataloader):
         x1, x2, y = x1.to(device), x2.to(device), y.to(device)
 
@@ -33,10 +34,9 @@ def train(dataloader, model, loss_fn, optimizer, device="cuda"):
         loss.backward()
         optimizer.step()
 
-        #if batch % 4 == 0:
-        print(batch)
-        loss, current = loss.item(), batch * len(x1)
-        print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+        seen_samples += len(x1)
+        print(f"\rloss: {loss.item():>7f}  [{seen_samples:>5d}/{size:>5d}]", end="")
+    print("\n")
 
 
 def test(dataloader, model, loss_fn, device="cuda"):
