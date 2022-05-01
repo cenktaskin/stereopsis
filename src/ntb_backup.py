@@ -54,3 +54,9 @@ for i in range(5):
             fig.savefig(output_dir.joinpath(f"test{current_img_count}.jpg"))
             current_img_count += 1
 
+
+# If you get an error, try installing packages with cell below
+# !pip install -r stereopsis/env-recipe.txt
+
+# Reload imported modules here, in case of updates via git
+# importlib.reload(foo)
