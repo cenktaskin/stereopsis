@@ -8,9 +8,10 @@ import tarfile
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-model = BeelineModel()
-print(model.conv1[0].weight)
 train_id = "202205011633"
+dataset_id = "20220301"
+model = BeelineModel()
+
 with tarfile.open(f"/home/cenkt/downloads/{train_id}.tar") as f:
     model_file = f.extractfile("model.pth")
     model.load_state_dict(torch.load(model_file, map_location=torch.device("cpu")))
@@ -18,7 +19,7 @@ with tarfile.open(f"/home/cenkt/downloads/{train_id}.tar") as f:
     test_idx = list(np.loadtxt(idx_file).astype(int))
 
 
-dataset_path = data_path.joinpath("raw/data-20220301")
+dataset_path = data_path.joinpath(f"raw/data-{dataset_id}")
 label_transformer = LabelTransformer(h=120, w=214)
 dataset = StereopsisDataset(dataset_path, transform=transforms.Compose([np_to_tensor]),
                             target_transform=transforms.Compose([label_transformer]))
