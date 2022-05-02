@@ -20,9 +20,9 @@ def create_dataloaders(data_path, batch_size=32, test_split_ratio=0.9):
 
 def train(dataloader, model, loss_fn, optimizer, device="cuda"):
     size = len(dataloader.dataset)
-    loss_history = []
     model.train()
     seen_samples = 0
+    train_loss = 0
     for batch, (x1, x2, y) in enumerate(dataloader):
         x1, x2, y = x1.to(device), x2.to(device), y.to(device)
 
@@ -37,13 +37,13 @@ def train(dataloader, model, loss_fn, optimizer, device="cuda"):
 
         seen_samples += len(x1)
         print(f"\rloss: {loss.item():>7f}  [{seen_samples:>5d}/{size:>5d}]", end="")
-        loss_history.append(loss.item())
+        train_loss += loss.item()
     print("\n")
-    return loss_history
+    train_loss /= len(dataloader)
+    return train_loss
 
 
 def test(dataloader, model, loss_fn, device="cuda"):
-    loss_history = []
     num_batches = len(dataloader)
     model.eval()
     test_loss = 0
@@ -54,5 +54,4 @@ def test(dataloader, model, loss_fn, device="cuda"):
             test_loss += loss_fn(pred, y).item()
     test_loss /= num_batches
     print(f"Test Error: \n Avg loss: {test_loss:>8f} \n")
-    loss_history.append(test_loss)
-    return loss_history
+    return test_loss
