@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from dataset import LabelTransformer, StereopsisDataset, np_to_tensor
+from tqdm import tqdm
 
 
 def create_dataloaders(data_path, batch_size=32, test_split_ratio=0.9):
@@ -23,7 +24,9 @@ def train(dataloader, model, loss_fn, optimizer, device="cuda"):
     model.train()
     seen_samples = 0
     train_loss = 0
-    for batch, (x1, x2, y) in enumerate(dataloader):
+    epoch_loop = tqdm(enumerate(dataloader), leave=False, total=len(dataloader))
+    # https://www.youtube.com/watch?v=RKHopFfbPao use this, with fixed floating digit nrs
+    for batch, (x1, x2, y) in epoch_loop:
         x1, x2, y = x1.to(device), x2.to(device), y.to(device)
 
         # Compute prediction error
