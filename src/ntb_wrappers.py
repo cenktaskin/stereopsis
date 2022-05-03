@@ -58,3 +58,7 @@ def test(dataloader, model, loss_fn, device="cuda"):
     test_loss /= num_batches
     print(f"Test Error: \n Avg loss: {test_loss:>8f} \n")
     return test_loss
+
+# implement this as well
+def train_the_model(mod, epochs, train_loader, test_loader, loss_function, optimizer, device="cuda"):
+    pass
