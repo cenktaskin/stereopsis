@@ -41,7 +41,6 @@ def train(train_loop, model, loss_fn, optimizer, device="cuda"):
         # seen_samples += len(x1)
         # print(f"\rloss: {loss.item():>7f}  [{seen_samples:>5d}/{size:>5d}]", end="")
         train_loss += loss.item()
-    print("\n")
     # train_loss /= len(dataloader)
     return train_loss
 
