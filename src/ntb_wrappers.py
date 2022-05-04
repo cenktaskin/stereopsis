@@ -56,7 +56,7 @@ def test(dataloader, model, loss_fn, device="cuda"):
             pred = model(x1, x2)
             test_loss += loss_fn(pred, y).item()
     test_loss /= num_batches
-    print(f"Test Error: \n Avg loss: {test_loss:>8f} \n")
+    #print(f"Test Error: \n Avg loss: {test_loss:>8f} \n")
     return test_loss
 
 
@@ -64,8 +64,8 @@ def train_the_model(model, epochs, train_dataloader, test_dataloader, loss_funct
     train_hist = []
     test_hist = []
     train_dataset_size = len(train_dataloader)
+    train_loop = tqdm(enumerate(train_dataloader), leave=False, total=train_dataset_size)
     for t in range(epochs):
-        train_loop = tqdm(enumerate(train_dataloader), leave=False, total=train_dataset_size)
         train_loop.set_description(f"Epoch [{t:4d}/{epochs:4d}]")
         # print(f"Epoch {t + 1}\n-------------------------------")
         train_loss = train(train_loop, model, loss_function, optimizer, device)
