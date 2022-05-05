@@ -10,7 +10,7 @@ import yaml
 # cam4 : ir_8_bit_channel
 # cam5 : ir_16_bit_channel_upsampled
 
-project_path = Path("/home/cenkt/git/stereopsis")
+project_path = Path(__file__).joinpath("../../..").resolve()
 data_path = project_path.joinpath('data')
 cam_suffix = {2: "ir", 3: "dp", 4: "i8"}
 img_size = {0: (720, 1280), 1: (720, 1280), 2: (171, 224), 3: (171, 224), 4: (171, 224), 5: (720, 1280)}
