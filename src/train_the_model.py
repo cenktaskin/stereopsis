@@ -20,14 +20,14 @@ if not results_path.exists():
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using {device} device")
 
-train_dataloader, test_dataloader, test_idx = create_dataloaders(data_path, batch_size=32, test_split_ratio=0.9)
+train_dataloader, test_dataloader, test_idx = create_dataloaders(dataset_path, batch_size=32, test_split_ratio=0.9)
 
 model = BeelineModel().to(device)
 
 loss_fn = MaskedMSE()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.05)
 
-epochs = 2
+epochs = 200
 model, train_hist, test_hist = train_the_model(model, epochs, train_dataloader, test_dataloader, loss_fn, optimizer, device)
 
 torch.save(model.state_dict(), results_path.joinpath("model.pth"))
