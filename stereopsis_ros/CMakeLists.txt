@@ -10,7 +10,6 @@ project(stereopsis_ros)
 find_package(catkin REQUIRED COMPONENTS
 cv_bridge
 image_transport
-camera_info_manager
 roscpp
 sensor_msgs
 std_msgs
@@ -109,7 +108,7 @@ catkin_package(
         #  INCLUDE_DIRS include
         #  LIBRARIES stereo_driver
         #  CATKIN_DEPENDS other_catkin_pkg
-        CATKIN_DEPENDS cv_bridge image_transport roscpp sensor_msgs std_msgs camera_info_manager
+        CATKIN_DEPENDS cv_bridge image_transport roscpp sensor_msgs std_msgs
         #  DEPENDS system_lib
 )
 
