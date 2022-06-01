@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from preprocessing.data_io import data_path
 from loss import MaskedMSE
-from models import BeelineModel
+from src.beeline.model import BeelineModel
 from train_wrappers import create_dataloaders, train_the_model
 
 
