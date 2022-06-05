@@ -1,7 +1,7 @@
 from datetime import datetime
 import pytz
-import numpy as np
 from tqdm import tqdm
+import numpy as np
 
 import torch
 from torch.utils.data import DataLoader
@@ -13,89 +13,82 @@ from loss import MaskedMSE
 from src.beeline.model import BeelineModel
 from torch.utils.tensorboard import SummaryWriter
 
-
-def test(dataloader, model, loss_fn, device="cuda"):
-    num_batches = len(dataloader)
-    model.eval()
-    test_loss = 0
-    with torch.no_grad():
-        for x1, x2, y in dataloader:
-            x1, x2, y = x1.to(device), x2.to(device), y.to(device)
-            pred = model(x1, x2)
-            test_loss += loss_fn(pred, y).item()
-    test_loss /= num_batches
-    # print(f"Test Error: \n Avg loss: {test_loss:>8f} \n")
-    return test_loss
-
+timestamp = datetime.now().astimezone(pytz.timezone("Europe/Berlin")).strftime("%Y%m%d%H%M")
+results_path = data_path.joinpath(f"runs/train-{timestamp}")
+writer = SummaryWriter(results_path.joinpath("logs"))
 
 dataset_id = "20220301"
 dataset_path = data_path.joinpath(f"raw/dataset-{dataset_id}")
-train_id = datetime.now().astimezone(pytz.timezone("Europe/Berlin")).strftime("%Y%m%d%H%M")
-print(f"Train id: {train_id}")
-results_path = data_path.joinpath(f"processed/train-{train_id}")
-if not results_path.exists():
-    results_path.mkdir()
+current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"Using {device} device")
+print(f"Train id: {timestamp}")
+print(f"Using {current_device} device")
 
-# Create dataloaders
-batch_size = 8
-test_split_ratio = 0.9
+batch_size = 16
+data_split_ratio = 0.95
 label_transformer = LabelTransformer(h=120, w=214)
 dataset = StereopsisDataset(dataset_path, transform=transforms.Compose([np_to_tensor]),
                             target_transform=transforms.Compose([label_transformer]))
 
-train_size = int(test_split_ratio * len(dataset))
+train_size = int(data_split_ratio * len(dataset))
 test_size = len(dataset) - train_size
-train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
+train_dataset, validation_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
 
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
-test_idx = test_dataset.indices
-#
+validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True)
 
-model = BeelineModel().to(device)
+model = BeelineModel().to(current_device)
 loss_fn = MaskedMSE()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.05)
 
+print(f"Batch size: {batch_size}")
+print(f"Sample size: Train: {train_size}, Test: {test_size}")
+
+writer.add_graph(model, [i.to(current_device) for i in next(iter(train_dataloader))[:-1]])
+
 # Train the model
-epochs = 2
-#train_hist, test_hist = [], []
+epochs = 100
 batch_count = len(train_dataloader)
-print(f"Batch count: {batch_count}")
 for i in range(epochs):
-    train_loop = tqdm(train_dataloader, leave=False)
-    train_loop.set_description(f"Epoch [{i:4d}/{epochs:4d}]")
+    with tqdm(total=batch_count, unit="batch", leave=False) as pbar:
+        pbar.set_description(f"Epoch [{i:4d}/{epochs:4d}]")
 
-    model.train()
-    running_loss = 0
-    for batch, (x1, x2, y) in enumerate(train_loop):
-        x1, x2, y = x1.to(device), x2.to(device), y.to(device)
+        # Training
+        model.train()
+        running_loss = 0
+        for j, (x1, x2, y) in enumerate(train_dataloader):
+            x1, x2, y = x1.to(current_device), x2.to(current_device), y.to(current_device)
+            y_hat = model(x1, x2)
+            loss = loss_fn(y_hat, y)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-        prediction = model(x1, x2)
-        loss = loss_fn(prediction, y)
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+            train_loss = loss.item()
+            running_loss += train_loss
+            batch_idx = i * batch_count + j + 1
+            writer.add_scalar("Loss/train", train_loss, batch_idx)
+            pbar.set_postfix(loss=f"{train_loss:.4f}")
+            pbar.update(True)
 
-        running_loss += loss.item()
 
-        reporting_interval = 1
-        if batch % reporting_interval == reporting_interval-1:
-            last_loss = running_loss / reporting_interval
-            #print(f"Batch [{batch+1:4d}/{batch_count:4d}] Loss: {last_loss:.4f}")
-            #sample_idx = i * len(train_dataloader) + i + 1
-            running_loss = 0
-            train_loop.set_postfix(loss=f"{last_loss:.4f}")
+        # Validation
+        running_val_loss = 0
+        model.eval()
+        with torch.no_grad():
+            for k, (x1, x2, y) in enumerate(validation_dataloader):
+                x1, x2, y = x1.to(current_device), x2.to(current_device), y.to(current_device)
+                y_hat = model(x1, x2)
+                running_val_loss += loss_fn(y_hat, y).item()
 
-    #test_loss = test(test_dataloader, model, loss_fn, device)
-    #train_loop.set_postfix(loss=train_loss, test_loss=test_loss)
-    #train_hist.append(train_loss)
-    #test_hist.append(test_loss)
-print("Done!")
+        avg_loss = running_loss / len(train_dataloader)  # loss per batch
+        avg_val_loss = running_val_loss / len(validation_dataloader)
 
-#torch.save(model.state_dict(), results_path.joinpath("model.pth"))
-#np.savetxt(results_path.joinpath('test_indices.txt'), test_idx)
-#np.savetxt(results_path.joinpath('train_hist.txt'), train_hist)
-#np.savetxt(results_path.joinpath('test_hist.txt'), test_hist)
+        writer.add_scalars('Avg Losses per Epoch',
+                           {'Training': avg_loss, 'Validation': avg_val_loss},
+                           i + 1)
+        writer.flush()
+
+torch.save(model.state_dict(), results_path.joinpath("model.pth"))
+np.savetxt(results_path.joinpath('validation_indices.txt'), validation_dataset.indices)
+print("Finished training!")
