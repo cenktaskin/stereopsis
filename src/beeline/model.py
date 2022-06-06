@@ -2,6 +2,8 @@ from torch import nn, split
 
 
 class BeelineModel(nn.Module):
+    name = "beeline"
+
     def __init__(self):
         super(BeelineModel, self).__init__()
         self.conv1 = nn.Sequential(nn.Conv2d(3, 3, 3, stride=2, padding=1),
@@ -24,6 +26,8 @@ class BeelineModel(nn.Module):
 
 
 class BeelineModel2(nn.Module):
+    name = "beeline2"
+
     def __init__(self):
         super(BeelineModel2, self).__init__()
         self.conv1 = nn.Sequential(nn.Conv2d(3, 12, 3, stride=2, padding=1),

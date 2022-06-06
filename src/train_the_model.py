@@ -10,19 +10,12 @@ from torchvision import transforms
 from preprocessing.data_io import data_path
 from dataset import LabelTransformer, StereopsisDataset, np_to_tensor
 from loss import MaskedMSE
-from src.beeline.model import BeelineModel
+from src.beeline.model import BeelineModel, BeelineModel2
 from torch.utils.tensorboard import SummaryWriter
-
-timestamp = datetime.now().astimezone(pytz.timezone("Europe/Berlin")).strftime("%Y%m%d%H%M")
-results_path = data_path.joinpath(f"runs/train-{timestamp}")
-writer = SummaryWriter(results_path.joinpath("logs"))
 
 dataset_id = "20220301"
 dataset_path = data_path.joinpath(f"raw/dataset-{dataset_id}")
 current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-print(f"Train id: {timestamp}")
-print(f"Using {current_device} device")
 
 batch_size = 16
 data_split_ratio = 0.95
@@ -37,14 +30,19 @@ train_dataset, validation_dataset = torch.utils.data.random_split(dataset, [trai
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True)
 
-model = BeelineModel().to(current_device)
+model = BeelineModel2().to(current_device)
 loss_fn = MaskedMSE()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.05)
 
+timestamp = datetime.now().astimezone(pytz.timezone("Europe/Berlin")).strftime("%Y%m%d%H%M")
+results_path = data_path.joinpath(f"runs/{model.name}-train-{timestamp}")
+writer = SummaryWriter(results_path.joinpath("logs"))
+writer.add_graph(model, [i.to(current_device) for i in next(iter(train_dataloader))[:-1]])
+
+print(f"Train id: {timestamp}")
+print(f"Using {current_device} device")
 print(f"Batch size: {batch_size}")
 print(f"Sample size: Train: {train_size}, Test: {test_size}")
-
-writer.add_graph(model, [i.to(current_device) for i in next(iter(train_dataloader))[:-1]])
 
 # Train the model
 epochs = 100
@@ -70,7 +68,6 @@ for i in range(epochs):
             writer.add_scalar("Loss/train", train_loss, batch_idx)
             pbar.set_postfix(loss=f"{train_loss:.4f}")
             pbar.update(True)
-
 
         # Validation
         running_val_loss = 0
