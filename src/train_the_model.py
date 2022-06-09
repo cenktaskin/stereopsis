@@ -17,7 +17,7 @@ dataset_id = "20220301"
 dataset_path = data_path.joinpath(f"raw/dataset-{dataset_id}")
 current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-batch_size = 16
+batch_size = 8
 data_split_ratio = 0.95
 label_transformer = LabelTransformer(h=120, w=214)
 dataset = StereopsisDataset(dataset_path, transform=transforms.Compose([np_to_tensor]),
