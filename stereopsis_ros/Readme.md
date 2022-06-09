@@ -7,7 +7,7 @@ Another aspect of project stereopsis, drivers and such.
 ### Dependencies
 For a clean install of ros-base and ubuntu20
 >~~~
->sudo apt install build-essential ros-noetic-vision-opencv ros-noetic-image-common
+>sudo apt install build-essential ros-noetic-vision-opencv ros-noetic-image-common python3-catkin-tools
 >~~~
 
 - Create your catkin-ws.
