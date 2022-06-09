@@ -15,13 +15,13 @@ class NNModel(nn.Module):
         self.conv3 = nn.Sequential(nn.Conv2d(128, 256, kernel_size=3, padding='same'),
                                    nn.BatchNorm2d(256),
                                    nn.ReLU())
-        self.conv3 = nn.Sequential(nn.Conv2d(256, 512, kernel_size=3, padding='same'),
+        self.conv4 = nn.Sequential(nn.Conv2d(256, 512, kernel_size=3, padding='same'),
                                    nn.BatchNorm2d(512),
                                    nn.ReLU())
-        self.conv3 = nn.Sequential(nn.Conv2d(512, 1024, kernel_size=3, padding='same'),
+        self.conv5 = nn.Sequential(nn.Conv2d(512, 1024, kernel_size=3, padding='same'),
                                    nn.BatchNorm2d(1024),
                                    nn.ReLU())
-        self.conv4 = nn.Conv2d(1024, 1, kernel_size=3, padding='same')
+        self.conv6 = nn.Conv2d(1024, 1, kernel_size=3, padding='same')
 
     def forward(self, x):
         x = x.float()
@@ -29,5 +29,8 @@ class NNModel(nn.Module):
         x = self.conv2(x)
         x = self.conv3(x)
         x = self.conv4(x)
+        x = self.conv5(x)
+        x = self.conv6(x)
+
 
         return x
