@@ -11,7 +11,7 @@ from torchvision import transforms
 from preprocessing.data_io import data_path
 from dataset import LabelTransformer, StereopsisDataset, np_to_tensor
 from loss import MaskedMSE
-from src.beeline.model import BeelineModel, BeelineModel2
+#from src.beeline.model import BeelineModel, BeelineModel2
 from torch.utils.tensorboard import SummaryWriter
 
 dataset_id = "20220301"
