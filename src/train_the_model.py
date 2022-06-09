@@ -30,7 +30,7 @@ train_dataset, validation_dataset = torch.utils.data.random_split(dataset, [trai
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True)
 
-model_name = "beeline2"
+model_name = "beeline3"
 model = getattr(importlib.import_module(f"models.{model_name}"), "NNModel")().to(current_device)
 loss_fn = MaskedMSE()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.05)
