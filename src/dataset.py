@@ -33,7 +33,8 @@ class StereopsisDataset(Dataset):
         if self.target_transform:
             label = self.target_transform(label)
         l_img, r_img = torch.split(image, image.shape[2] // 2, dim=2)
-        return l_img, r_img, label
+        img_vol = torch.cat([l_img,r_img])
+        return img_vol, label
 
 
 class LabelTransformer(object):

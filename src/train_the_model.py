@@ -2,6 +2,7 @@ from datetime import datetime
 import pytz
 from tqdm import tqdm
 import numpy as np
+import importlib
 
 import torch
 from torch.utils.data import DataLoader
@@ -30,7 +31,8 @@ train_dataset, validation_dataset = torch.utils.data.random_split(dataset, [trai
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True)
 
-model = BeelineModel2().to(current_device)
+model_name = "beeline"
+model = getattr(importlib.import_module(f"models.{model_name}"), "NNModel")().to(current_device)
 loss_fn = MaskedMSE()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.05)
 
@@ -45,7 +47,7 @@ print(f"Batch size: {batch_size}")
 print(f"Sample size: Train: {train_size}, Test: {test_size}")
 
 # Train the model
-epochs = 100
+epochs = 30
 batch_count = len(train_dataloader)
 for i in range(epochs):
     with tqdm(total=batch_count, unit="batch", leave=False) as pbar:
@@ -54,9 +56,9 @@ for i in range(epochs):
         # Training
         model.train()
         running_loss = 0
-        for j, (x1, x2, y) in enumerate(train_dataloader):
-            x1, x2, y = x1.to(current_device), x2.to(current_device), y.to(current_device)
-            y_hat = model(x1, x2)
+        for j, (x, y) in enumerate(train_dataloader):
+            x, y = x.to(current_device), y.to(current_device)
+            y_hat = model(x)
             loss = loss_fn(y_hat, y)
             optimizer.zero_grad()
             loss.backward()
@@ -73,9 +75,9 @@ for i in range(epochs):
         running_val_loss = 0
         model.eval()
         with torch.no_grad():
-            for k, (x1, x2, y) in enumerate(validation_dataloader):
-                x1, x2, y = x1.to(current_device), x2.to(current_device), y.to(current_device)
-                y_hat = model(x1, x2)
+            for k, (x, y) in enumerate(validation_dataloader):
+                x, y = x.to(current_device), y.to(current_device)
+                y_hat = model(x)
                 running_val_loss += loss_fn(y_hat, y).item()
 
         avg_loss = running_loss / len(train_dataloader)  # loss per batch
@@ -86,6 +88,8 @@ for i in range(epochs):
                            i + 1)
         writer.flush()
 
+with open(results_path.joinpath('model_summary.txt'), "w") as f:
+    f.write(model.__str__())
 torch.save(model.state_dict(), results_path.joinpath("model.pth"))
 np.savetxt(results_path.joinpath('validation_indices.txt'), validation_dataset.indices)
 print("Finished training!")
