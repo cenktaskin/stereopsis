@@ -1,6 +1,4 @@
-data/raw/**
-data/processed/**
-data/runs/**
+data/**
 
 # Environments
 .env
