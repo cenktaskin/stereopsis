@@ -19,7 +19,7 @@ class ImageSaverNode:
     ir_format = '16UC1'
     depth_format = '32FC1'
 
-    def __init__(self, calibration=False, output_dir='/home/cenkt/ros-outputs/'):
+    def __init__(self, calibration, output_dir):
         timestamp = datetime.now().astimezone(pytz.timezone("Europe/Berlin")).strftime("%Y%m%d%H%M")
         self.output_path = Path(output_dir).joinpath(f"dataset-{timestamp}")
         if not self.output_path.exists():
@@ -59,7 +59,8 @@ class ImageSaverNode:
 if __name__ == '__main__':
     rospy.init_node('image_saver')
     print("Node initialized")
-    ImageSaverNode(calibration=rospy.get_param('calibration', False))
+    ImageSaverNode(calibration=rospy.get_param('calibration', False),
+                   output_dir=rospy.get_param('output_dir', '~/ros-outputs/'))
     while not rospy.is_shutdown():
         rospy.spin()
     print("Terminated")
