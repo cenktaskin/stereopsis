@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 class ImageSaverNode:
-    stereo_topic = '/stereo_driver_node/image_raw'
+    stereo_topic = '/stereo_driver/image_raw'
     ir_topic = '/pico_flexx/image_mono16'
     ir_topic8 = '/pico_flexx/image_mono8'
     depth_topic = '/pico_flexx/image_depth'
@@ -41,14 +41,14 @@ class ImageSaverNode:
         ts = message_filters.ApproximateTimeSynchronizer([self.st_sub, self.pico_sub], 10, 0.1)
         ts.registerCallback(self.callback_poly)
 
-    def callback_poly(self, stereo_img, pico_img):
+    def callback_poly(self, stereo_msg, pico_msg):
         try:
-            stereo_img = self.bridge.imgmsg_to_cv2(stereo_img, "bgr8")
-            pico_img = self.bridge.imgmsg_to_cv2(pico_img, self.pico_format)
+            stereo_img = self.bridge.imgmsg_to_cv2(stereo_msg, "bgr8")
+            pico_img = self.bridge.imgmsg_to_cv2(pico_msg, self.pico_format)
         except CvBridgeError as e:
             print(e)
         else:
-            time_stamp = stereo_img.header.stamp
+            time_stamp = stereo_msg.header.stamp
             cv2.imwrite(str(self.output_path.joinpath('st_' + str(time_stamp) + '.tiff')), stereo_img)
             cv2.imwrite(str(self.output_path.joinpath(self.pico_prefix + str(time_stamp) + '.tiff')), pico_img)
             self.image_count += 1

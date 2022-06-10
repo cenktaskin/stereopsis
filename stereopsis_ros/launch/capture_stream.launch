@@ -1,9 +1,9 @@
 <launch>
-    <include file="stereo_driver.launch" />
+    <include file="$(find stereopsis_ros)/launch/stereo_driver.launch" />
 
     <include file="$(find pico_flexx_driver)/launch/pico_flexx_driver.launch" />
 
-    <include file="display_stream.launch" />
+    <include file="$(find stereopsis_ros)/launch/display_stream.launch" />
 
     <node name="bag_recorder" pkg="rosbag" type="record"
           args="record -o /tmp/trial
