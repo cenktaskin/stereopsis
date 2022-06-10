@@ -1,3 +1,5 @@
+data/*
+
 # Environments
 .env
 .venv

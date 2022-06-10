@@ -1,5 +1,5 @@
 <launch>
-    <arg name="video_device" default="/dev/video4"/>
+    <arg name="video_device" default="/dev/video0"/>
     <arg name="width" default="2560"/>
     <arg name="height" default="720"/>
     <arg name="display" default="false" />
