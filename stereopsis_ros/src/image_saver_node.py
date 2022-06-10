@@ -23,7 +23,7 @@ class ImageSaverNode:
         timestamp = datetime.now().astimezone(pytz.timezone("Europe/Berlin")).strftime("%Y%m%d%H%M")
         self.output_path = Path(output_dir).joinpath(f"dataset-{timestamp}")
         if not self.output_path.exists():
-            self.output_path.mkdir()
+            self.output_path.mkdir(parents=True)
         self.bridge = CvBridge()
         self.image_count = 0
         self.calibration = calibration
