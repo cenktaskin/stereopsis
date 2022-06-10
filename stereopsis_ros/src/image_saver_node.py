@@ -61,7 +61,7 @@ class ImageSaverNode:
 if __name__ == '__main__':
     rospy.init_node('image_saver')
     ImageSaverNode(calibration=rospy.get_param('calibration', False),
-                   output_dir=rospy.get_param('output_dir', Path.home().joinpath('/ros-outputs/')))
+                   output_dir=rospy.get_param('output_dir', Path.home().joinpath('ros-outputs')))
     while not rospy.is_shutdown():
         rospy.spin()
     print("Terminated")
