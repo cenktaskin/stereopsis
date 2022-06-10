@@ -40,6 +40,8 @@ class ImageSaverNode:
         self.pico_sub = message_filters.Subscriber(pico_topic, msg.Image)
         ts = message_filters.ApproximateTimeSynchronizer([self.st_sub, self.pico_sub], 10, 0.1)
         ts.registerCallback(self.callback_poly)
+        print("Node initialized")
+        print(f"Saving images to -> {self.output_path}")
 
     def callback_poly(self, stereo_msg, pico_msg):
         try:
@@ -58,9 +60,8 @@ class ImageSaverNode:
 
 if __name__ == '__main__':
     rospy.init_node('image_saver')
-    print("Node initialized")
     ImageSaverNode(calibration=rospy.get_param('calibration', False),
-                   output_dir=rospy.get_param('output_dir', '~/ros-outputs/'))
+                   output_dir=rospy.get_param('output_dir', Path.home().joinpath('/ros-outputs/'))
     while not rospy.is_shutdown():
         rospy.spin()
     print("Terminated")
