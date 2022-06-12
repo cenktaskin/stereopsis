@@ -8,6 +8,9 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 
+project_path = Path(__file__).joinpath("../..").resolve()
+data_path = project_path.joinpath('data')
+
 
 class StereopsisDataset(Dataset):
     def __init__(self, img_dir, transform=None, target_transform=None):
@@ -33,7 +36,7 @@ class StereopsisDataset(Dataset):
         if self.target_transform:
             label = self.target_transform(label)
         l_img, r_img = torch.split(image, image.shape[2] // 2, dim=2)
-        img_vol = torch.cat([l_img,r_img])
+        img_vol = torch.cat([l_img, r_img])
         return img_vol, label
 
 

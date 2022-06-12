@@ -1,17 +1,15 @@
 from datetime import datetime
 import pytz
 from tqdm import tqdm
-import numpy as np
 import importlib
 
 import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
-
-from preprocessing.data_io import data_path
-from dataset import LabelTransformer, StereopsisDataset, np_to_tensor
-from loss import MaskedMSE
 from torch.utils.tensorboard import SummaryWriter
+
+from dataset import LabelTransformer, StereopsisDataset, np_to_tensor, data_path
+from loss import MaskedMSE
 
 dataset_id = "20220301"
 dataset_path = data_path.joinpath(f"raw/dataset-{dataset_id}")
@@ -30,8 +28,13 @@ train_dataset, validation_dataset = torch.utils.data.random_split(dataset, [trai
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True)
 
-model_name = "beeline3"
-model = getattr(importlib.import_module(f"models.{model_name}"), "NNModel")().to(current_device)
+# for layer_count in range(2,5):
+layer_count = 2
+channel_list = [2 ** (i + 6) for i in range(layer_count)]
+model_type = "beeline"
+model_net = getattr(importlib.import_module(f"models.{model_type}"), "NNModel")
+model = model_net(f"beeline{len(channel_list)}", channel_list).to(current_device)
+
 loss_fn = MaskedMSE()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.05)
 
@@ -46,7 +49,7 @@ print(f"Batch size: {batch_size}")
 print(f"Sample size: Train: {train_size}, Test: {test_size}")
 
 # Train the model
-epochs = 30
+epochs = 1
 batch_count = len(train_dataloader)
 for i in range(epochs):
     with tqdm(total=batch_count, unit="batch", leave=False) as pbar:
@@ -87,8 +90,19 @@ for i in range(epochs):
                            i + 1)
         writer.flush()
 
-with open(results_path.joinpath('model_summary.txt'), "w") as f:
-    f.write(model.__str__())
+report = "RUN REPORT\n------\n"
+report += f"Train id: {timestamp}"
+report += f"Using {current_device} device"
+report += f"Dataset:{dataset_id}\n"
+report += f"Data instances: Train->{train_size}, Test->{test_size}"
+report += f"Batch size: {batch_size}"
+report += f"Epochs: {epochs}"
+report += f"Loss function: {loss_fn}"
+report += f"Optimizer: {optimizer}"
+report += f"Model Summary:\n{model.__str__()}"
+report += f"Trainable parameter count: {sum(p.numel() for p in model.parameters() if p.requires_grad)}"
+
+with open(results_path.joinpath('report.txt'), "w") as f:
+    f.write(report)
 torch.save(model.state_dict(), results_path.joinpath("model.pth"))
-np.savetxt(results_path.joinpath('validation_indices.txt'), validation_dataset.indices)
 print("Finished training!")
