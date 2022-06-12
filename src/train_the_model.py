@@ -16,7 +16,7 @@ dataset_id = "20220301"
 dataset_path = data_path.joinpath(f"raw/dataset-{dataset_id}")
 current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-batch_size = 8
+batch_size = 16
 data_split_ratio = 0.95
 label_transformer = LabelTransformer(h=120, w=214)
 dataset = StereopsisDataset(dataset_path, transform=transforms.Compose([np_to_tensor]),
@@ -47,7 +47,7 @@ writer.add_graph(model, [i.to(current_device) for i in next(iter(train_dataloade
 print(f"Train id: {timestamp}")
 
 # Train the model
-epochs = 1
+epochs = 30
 batch_count = len(train_dataloader)
 for i in range(epochs):
     with tqdm(total=batch_count, unit="batch", leave=False) as pbar:
