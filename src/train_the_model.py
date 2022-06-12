@@ -44,9 +44,6 @@ writer = SummaryWriter(results_path.joinpath("logs"))
 writer.add_graph(model, [i.to(current_device) for i in next(iter(train_dataloader))[:-1]])
 
 print(f"Train id: {timestamp}")
-print(f"Using {current_device} device")
-print(f"Batch size: {batch_size}")
-print(f"Sample size: Train: {train_size}, Test: {test_size}")
 
 # Train the model
 epochs = 1
@@ -90,19 +87,21 @@ for i in range(epochs):
                            i + 1)
         writer.flush()
 
+print("Finished training!")
+
 report = "RUN REPORT\n------\n"
-report += f"Train id: {timestamp}"
-report += f"Using {current_device} device"
-report += f"Dataset:{dataset_id}\n"
-report += f"Data instances: Train->{train_size}, Test->{test_size}"
-report += f"Batch size: {batch_size}"
-report += f"Epochs: {epochs}"
-report += f"Loss function: {loss_fn}"
-report += f"Optimizer: {optimizer}"
-report += f"Model Summary:\n{model.__str__()}"
+report += f"Train id: {timestamp}\n"
+report += f"Using {current_device} device\n"
+report += f"Dataset: {dataset_id}\n"
+report += f"Data instances: Train->{train_size}, Test->{test_size}\n"
+report += f"Batch size: {batch_size}\n"
+report += f"Epochs: {epochs}\n"
+report += f"Loss function: \n{loss_fn}\n"
+report += f"Optimizer: \n{optimizer}\n"
+report += f"Model Summary:\n{model.__str__()}\n"
 report += f"Trainable parameter count: {sum(p.numel() for p in model.parameters() if p.requires_grad)}"
 
 with open(results_path.joinpath('report.txt'), "w") as f:
     f.write(report)
 torch.save(model.state_dict(), results_path.joinpath("model.pth"))
-print("Finished training!")
+print(f"Dumped logs to {results_path}")
