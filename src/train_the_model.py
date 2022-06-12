@@ -2,6 +2,7 @@ from datetime import datetime
 import pytz
 from tqdm import tqdm
 import importlib
+import sys
 
 import torch
 from torch.utils.data import DataLoader
@@ -29,8 +30,8 @@ train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True
 validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True)
 
 # for layer_count in range(2,5):
-layer_count = 2
-channel_list = [2 ** (i + 6) for i in range(layer_count)]
+layer_count = sys.argv[1]
+channel_list = [2 ** (i + 6) for i in range(int(layer_count))]
 model_type = "beeline"
 model_net = getattr(importlib.import_module(f"models.{model_type}"), "NNModel")
 model = model_net(f"beeline{len(channel_list)}", channel_list).to(current_device)
