@@ -55,7 +55,6 @@ class ImageSaverNode:
             cv2.imwrite(str(self.output_path.joinpath(self.pico_prefix + str(time_stamp) + '.tiff')), pico_img)
             self.image_count += 1
             print(f"Saved {self.image_count} image(s)")
-            rospy.sleep(0.01)
 
 
 if __name__ == '__main__':
