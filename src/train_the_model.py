@@ -25,14 +25,13 @@ train_dataset, validation_dataset = torch.utils.data.random_split(dataset, [trai
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 
-layer_count = 5
-channel_list = [2 ** (i + 6) for i in range(int(layer_count))]
-model_type = "beeline"
+model_type = "dispnet"
 model_net = getattr(importlib.import_module(f"models.{model_type}"), "NNModel")
-model = model_net(f"beeline{len(channel_list)}", channel_list).to(current_device)
+model = model_net(model_type).to(current_device)
 
 loss_fn = MaskedMSE()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.05)
+# scheduler should rather start decaying after 400k according to paper but this is more useful
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2 * 10 ** 5, gamma=0.5)
 
 timestamp = datetime.now().astimezone(pytz.timezone("Europe/Berlin")).strftime("%Y%m%d%H%M")
@@ -106,34 +105,3 @@ with open(results_path.joinpath('report.txt'), "w") as f:
     f.write(report)
 torch.save(model.state_dict(), results_path.joinpath("model.pth"))
 print(f"Dumped logs to {results_path}")
-
-if i < 100:
-    optimzer = torch.optim.Adam(net.parameters(), lr=1e-4, weight_decay=0.0004, betas=[0.9, 0.999])
-    print("optimizer completed")
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimzer, gamma=0.5, milestones=[300, 600, 900, 1200, 1500])
-    print("scheduler completed")
-elif (i >= 100) & (i < 200):
-    optimzer = torch.optim.Adam(net.parameters(), lr=1e-4, weight_decay=0.0004, betas=[0.9, 0.999])
-    print("optimizer reset")
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimzer, gamma=0.5, milestones=[300, 600, 900, 1200, 1500])
-    print("scheduler reset")
-elif (i >= 200) & (i < 300):
-    optimzer = torch.optim.Adam(net.parameters(), lr=1e-4, weight_decay=0.0004, betas=[0.9, 0.999])
-    print("optimizer reset")
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimzer, gamma=0.5, milestones=[300, 600, 900, 1200, 1500])
-    print("scheduler reset")
-elif (i >= 300) & (i < 400):
-    optimzer = torch.optim.Adam(net.parameters(), lr=1e-4, weight_decay=0.0004, betas=[0.9, 0.999])
-    print("optimizer reset")
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimzer, gamma=0.5, milestones=[300, 600, 900, 1200, 1500])
-    print("scheduler reset")
-elif (i >= 400) & (i < 500):
-    optimzer = torch.optim.Adam(net.parameters(), lr=1e-4, weight_decay=0.0004, betas=[0.9, 0.999])
-    print("optimizer reset")
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimzer, gamma=0.5, milestones=[300, 600, 900, 1200, 1500])
-    print("scheduler reset")
-else:
-    optimzer = torch.optim.Adam(net.parameters(), lr=1e-4, weight_decay=0.0004, betas=[0.9, 0.999])
-    print("optimizer reset")
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimzer, gamma=0.5, milestones=[300, 600, 900, 1200, 1500])
-    print("scheduler reset")
