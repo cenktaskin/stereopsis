@@ -1,4 +1,4 @@
-from torch import nn, sqrt
+from torch import nn, sqrt, randn
 
 
 class MaskedMSE(nn.Module):
@@ -12,14 +12,14 @@ class MaskedMSE(nn.Module):
         return sqrt(self.mse(yhat, y))
 
 
+if __name__ == "__main__":
 
-#class MaskedMSE(nn.Module):
-#    def __init__(self):
-#        super().__init__()
-#        #self.mse = nn.MSELoss()
-#
-#    def forward(self, yhat, y):
-#        mask = y == 0
-#        d = (yhat[~mask] - y[~mask]) ** 2  # mask the 0.0 elements to not to contribute to the error
-#        loss = d.mean()
-#        return loss
+    yhat = randn(1, 1, 2, 3)
+    y = randn(1, 2, 3)
+    y[0,1,1] = 0
+    diff  = yhat-y
+    print(yhat)
+    print(y)
+    loss_fn = MaskedMSE()
+    loss = loss_fn(yhat, y)
+    print(loss.item())
