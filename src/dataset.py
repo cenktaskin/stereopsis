@@ -13,10 +13,12 @@ data_path = project_path.joinpath('data')
 
 
 class StereopsisDataset(Dataset):
-    def __init__(self, img_dir, transform=None, target_transform=None):
+    def __init__(self, img_dir):
         self.img_dir = img_dir
-        self.transform = transform
-        self.target_transform = target_transform
+        self.transform = transforms.Compose([transforms.ToTensor(),
+                                             transforms.Normalize([0.485, 0.456, 0.406],
+                                                                  [0.229, 0.224, 0.225])])
+        self.target_transform = None
         self.timestamp_list = np.array(sorted([int(x.stem[3:]) for x in self.img_dir.glob("sl*")]))
 
     def __len__(self):
@@ -75,5 +77,3 @@ if __name__ == "__main__":
     plt.title(f"Training sample with type {type(y)}, shape {y.shape}")
     plt.imshow(y)
     plt.show()
-
-

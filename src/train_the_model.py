@@ -9,18 +9,16 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from torch.utils.tensorboard import SummaryWriter
 
-from dataset import LabelTransformer, StereopsisDataset, np_to_tensor, data_path
+from dataset import StereopsisDataset, data_path
 from loss import MaskedMSE
 
-dataset_id = "20220301"
+dataset_id = "20220610"
 dataset_path = data_path.joinpath(f"raw/dataset-{dataset_id}")
 current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 batch_size = 16
 data_split_ratio = 0.95
-label_transformer = LabelTransformer(h=120, w=214)
-dataset = StereopsisDataset(dataset_path, transform=transforms.Compose([np_to_tensor]),
-                            target_transform=transforms.Compose([label_transformer]))
+dataset = StereopsisDataset(data_path)
 
 train_size = int(data_split_ratio * len(dataset))
 test_size = len(dataset) - train_size
