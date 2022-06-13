@@ -7,7 +7,7 @@ Another aspect of project stereopsis, drivers and such.
 ### Dependencies
 For a clean install of ros-base and ubuntu20
 >~~~
->sudo apt install build-essential ros-noetic-vision-opencv ros-noetic-image-common python3-catkin-tools
+>sudo apt install build-essential ros-noetic-vision-opencv ros-noetic-image-common python3-catkin-tools ros-noetic-usb-cam ros-noetic-image-pipeline
 >~~~
 
 - Create your catkin-ws.
@@ -16,19 +16,8 @@ For a clean install of ros-base and ubuntu20
 - Follow the instructions on the aforementioned repository, it would ask you to place the royale sdk (that is for your system) to pico_flexx_driver/royale/ directory.
 - Build your packages. (I use catkin-tools package instead of catkin_make)
 
-> **C compiler error:** Make sure you have c compiler if not
->~~~
->apt install build-essential
->~~~
-
-> **Qt5 error:** During one of the attempts, qt5 caused a problem it was solved by
->~~~
->apt-get install qt5-default
->~~~
->Although I'm not sure whether it is necessary since the error was thrown by a sample code provided by royale, haven't tried whether it would be fatal to omit the specific sample.
-
 After this you should be able to run the command to grab images from the pico flexx
 ~~~
 roslaunch pico_flexx_driver pico_flexx_driver.launch
 ~~~
-Launch rviz to check them out!
+Launch rviz to check them out! Or use launcher files under ./launch/ to view them through image-view package.
