@@ -56,8 +56,7 @@ def imshow(inp, title=None):
 if __name__ == "__main__":
     data_path = Path("/home/cenkt/git/stereopsis/data/processed/dataset-20220610/")
 
-    dataset = StereopsisDataset(data_path, transform=transforms.Compose(
-        [transforms.ToTensor(), transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])]))
+    dataset = StereopsisDataset(data_path)
     dataloader = DataLoader(dataset, batch_size=16, shuffle=True)
 
     train_features, train_labels = next(iter(dataloader))

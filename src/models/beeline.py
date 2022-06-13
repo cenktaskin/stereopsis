@@ -11,7 +11,7 @@ class NNModel(nn.Module):
         layers[f"conv_{0}"] = conv_layer(c_in=6, c_out=c_list[0], k=7, s=3, p=3)
         layers[f"conv_{1}"] = conv_layer(c_in=c_list[0], c_out=c_list[1], s=2, p=1)
         for i in range(len(c_list) - 2):
-            layers[f"conv_{i + 2}"] = conv_layer(c_in=c_list[i + 1], c_out=c_list[i + 2])
+            layers[f"conv_{i + 2}"] = conv_layer(c_in=c_list[i + 1], c_out=c_list[i + 2], p="same")
         layers["conv_last"] = nn.Conv2d(c_list[-1], 1, kernel_size=3, padding="same")
 
         self.layers = nn.Sequential(layers)
@@ -23,7 +23,7 @@ class NNModel(nn.Module):
         return x
 
 
-def conv_layer(c_in, c_out, k=3, s=1, p="same"):
+def conv_layer(c_in, c_out, k=3, s=None, p=None):
     return nn.Sequential(nn.Conv2d(c_in, c_out, kernel_size=k, stride=s, padding=p),
                          nn.BatchNorm2d(c_out),
                          nn.ReLU())

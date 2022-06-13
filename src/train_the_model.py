@@ -2,11 +2,9 @@ from datetime import datetime
 import pytz
 from tqdm import tqdm
 import importlib
-import sys
 
 import torch
 from torch.utils.data import DataLoader
-from torchvision import transforms
 from torch.utils.tensorboard import SummaryWriter
 
 from dataset import StereopsisDataset, data_path
@@ -18,7 +16,7 @@ current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 batch_size = 16
 data_split_ratio = 0.95
-dataset = StereopsisDataset(data_path)
+dataset = StereopsisDataset(dataset_path)
 
 train_size = int(data_split_ratio * len(dataset))
 test_size = len(dataset) - train_size
@@ -27,8 +25,7 @@ train_dataset, validation_dataset = torch.utils.data.random_split(dataset, [trai
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True)
 
-# for layer_count in range(2,5):
-layer_count = sys.argv[1]
+layer_count = 5
 channel_list = [2 ** (i + 6) for i in range(int(layer_count))]
 model_type = "beeline"
 model_net = getattr(importlib.import_module(f"models.{model_type}"), "NNModel")
@@ -50,11 +47,14 @@ batch_count = len(train_dataloader)
 
 report = "RUN REPORT\n------\n"
 report += f"Train id: {timestamp}\n"
+report += f"Model name: {model.name}\n"
 report += f"Using {current_device} device\n"
 report += f"Dataset: {dataset_id}\n"
 report += f"Data instances: Train->{train_size}, Test->{test_size}\n"
 report += f"Batch size: {batch_size}\n"
 report += f"Epochs: {epochs}\n"
+report += f"Loss function: \n{loss_fn}\n"
+report += f"Optimizer: \n{optimizer}\n"
 print(report)
 for i in range(epochs):
     with tqdm(total=batch_count, unit="batch", leave=False) as pbar:
@@ -97,15 +97,6 @@ for i in range(epochs):
 
 print("Finished training!")
 
-report = "RUN REPORT\n------\n"
-report += f"Train id: {timestamp}\n"
-report += f"Using {current_device} device\n"
-report += f"Dataset: {dataset_id}\n"
-report += f"Data instances: Train->{train_size}, Test->{test_size}\n"
-report += f"Batch size: {batch_size}\n"
-report += f"Epochs: {epochs}\n"
-report += f"Loss function: \n{loss_fn}\n"
-report += f"Optimizer: \n{optimizer}\n"
 report += f"Model Summary:\n{model.__str__()}\n"
 report += f"Trainable parameter count: {sum(p.numel() for p in model.parameters() if p.requires_grad)}"
 
