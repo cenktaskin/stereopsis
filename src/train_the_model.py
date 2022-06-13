@@ -49,6 +49,15 @@ print(f"Train id: {timestamp}")
 # Train the model
 epochs = 30
 batch_count = len(train_dataloader)
+
+report = "RUN REPORT\n------\n"
+report += f"Train id: {timestamp}\n"
+report += f"Using {current_device} device\n"
+report += f"Dataset: {dataset_id}\n"
+report += f"Data instances: Train->{train_size}, Test->{test_size}\n"
+report += f"Batch size: {batch_size}\n"
+report += f"Epochs: {epochs}\n"
+print(report)
 for i in range(epochs):
     with tqdm(total=batch_count, unit="batch", leave=False) as pbar:
         pbar.set_description(f"Epoch [{i:4d}/{epochs:4d}]")
