@@ -66,6 +66,11 @@ for i in range(epochs):
         for j, (x, y) in enumerate(train_dataloader):
             x, y = x.to(current_device), y.to(current_device)
             y_hat = model(x)
+            # TODO: refactor code since model returns 6 preds now
+            # TODO: write dispnet loss function so that it changes weights of the finer predictions over time
+            # TODO: implement resizing for loss function
+            # TODO: check which whether to crop last part of the network, that part you can make untrainable
+            # TODO: try to ingest the pre-trained weights and start training on them
             loss = loss_fn(y_hat, y)
             optimizer.zero_grad()
             loss.backward()
