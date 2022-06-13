@@ -22,8 +22,8 @@ train_size = int(data_split_ratio * len(dataset))
 val_size = len(dataset) - train_size
 train_dataset, validation_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
 
-train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True)
+train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 
 layer_count = 5
 channel_list = [2 ** (i + 6) for i in range(int(layer_count))]
