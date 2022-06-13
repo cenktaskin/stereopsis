@@ -24,6 +24,8 @@ class NNModel(nn.Module):
 
 
 def conv_layer(c_in, c_out, k=3, s=None, p=None):
+    if not s:
+        s = 1
     return nn.Sequential(nn.Conv2d(c_in, c_out, kernel_size=k, stride=s, padding=p),
                          nn.BatchNorm2d(c_out),
                          nn.ReLU())
