@@ -33,6 +33,7 @@ model = model_net(f"beeline{len(channel_list)}", channel_list).to(current_device
 
 loss_fn = MaskedMSE()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.05)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2 * 10 ** 5, gamma=0.5)
 
 timestamp = datetime.now().astimezone(pytz.timezone("Europe/Berlin")).strftime("%Y%m%d%H%M")
 results_path = data_path.joinpath(f"runs/{model.name}-train-{timestamp}")
@@ -70,6 +71,7 @@ for i in range(epochs):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            scheduler.step()
 
             train_loss = loss.item()
             running_loss += train_loss
@@ -104,3 +106,34 @@ with open(results_path.joinpath('report.txt'), "w") as f:
     f.write(report)
 torch.save(model.state_dict(), results_path.joinpath("model.pth"))
 print(f"Dumped logs to {results_path}")
+
+if i < 100:
+    optimzer = torch.optim.Adam(net.parameters(), lr=1e-4, weight_decay=0.0004, betas=[0.9, 0.999])
+    print("optimizer completed")
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimzer, gamma=0.5, milestones=[300, 600, 900, 1200, 1500])
+    print("scheduler completed")
+elif (i >= 100) & (i < 200):
+    optimzer = torch.optim.Adam(net.parameters(), lr=1e-4, weight_decay=0.0004, betas=[0.9, 0.999])
+    print("optimizer reset")
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimzer, gamma=0.5, milestones=[300, 600, 900, 1200, 1500])
+    print("scheduler reset")
+elif (i >= 200) & (i < 300):
+    optimzer = torch.optim.Adam(net.parameters(), lr=1e-4, weight_decay=0.0004, betas=[0.9, 0.999])
+    print("optimizer reset")
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimzer, gamma=0.5, milestones=[300, 600, 900, 1200, 1500])
+    print("scheduler reset")
+elif (i >= 300) & (i < 400):
+    optimzer = torch.optim.Adam(net.parameters(), lr=1e-4, weight_decay=0.0004, betas=[0.9, 0.999])
+    print("optimizer reset")
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimzer, gamma=0.5, milestones=[300, 600, 900, 1200, 1500])
+    print("scheduler reset")
+elif (i >= 400) & (i < 500):
+    optimzer = torch.optim.Adam(net.parameters(), lr=1e-4, weight_decay=0.0004, betas=[0.9, 0.999])
+    print("optimizer reset")
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimzer, gamma=0.5, milestones=[300, 600, 900, 1200, 1500])
+    print("scheduler reset")
+else:
+    optimzer = torch.optim.Adam(net.parameters(), lr=1e-4, weight_decay=0.0004, betas=[0.9, 0.999])
+    print("optimizer reset")
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimzer, gamma=0.5, milestones=[300, 600, 900, 1200, 1500])
+    print("scheduler reset")
