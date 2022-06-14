@@ -4,11 +4,12 @@ from tqdm import tqdm
 import importlib
 
 import torch
+from torch.nn.functional import interpolate
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from dataset import StereopsisDataset, data_path
-from loss import MaskedMSE
+from dispnet_loss import MaskedMSE
 
 dataset_id = "20220610"
 dataset_path = data_path.joinpath(f"raw/dataset-{dataset_id}")
@@ -27,7 +28,7 @@ validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, sh
 
 model_type = "dispnet"
 model_net = getattr(importlib.import_module(f"models.{model_type}"), "NNModel")
-model = model_net(model_type).to(current_device)
+model = model_net().to(current_device)
 
 loss_fn = MaskedMSE()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.05)
@@ -42,7 +43,7 @@ writer.add_graph(model, [i.to(current_device) for i in next(iter(train_dataloade
 print(f"Train id: {timestamp}")
 
 # Train the model
-epochs = 30
+epochs = 1
 batch_count = len(train_dataloader)
 
 report = "RUN REPORT\n------\n"
@@ -65,13 +66,19 @@ for i in range(epochs):
         running_loss = 0
         for j, (x, y) in enumerate(train_dataloader):
             x, y = x.to(current_device), y.to(current_device)
-            y_hat = model(x)
+            predictions = model(x)
             # TODO: refactor code since model returns 6 preds now
             # TODO: write dispnet loss function so that it changes weights of the finer predictions over time
             # TODO: implement resizing for loss function
             # TODO: check which whether to crop last part of the network, that part you can make untrainable
             # TODO: try to ingest the pre-trained weights and start training on them
-            loss = loss_fn(y_hat, y)
+            pred = predictions[-1]  # finest one
+            if y.shape[-2:] != pred.shape[-2:]:
+                print("needs interpolating")
+                pred = interpolate(pred, size=y.shape[-2:], mode="area")
+            else:
+                print("doesn't need")
+            loss = loss_fn(pred, y)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
