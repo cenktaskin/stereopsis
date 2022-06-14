@@ -54,7 +54,7 @@ def imshow(inp, title=None):
 
 
 if __name__ == "__main__":
-    data_path = Path("/home/cenkt/git/stereopsis/data/processed/dataset-20220610/")
+    data_path = Path("/home/cenkt/git/stereopsis/data/raw/dataset-20220610/")
 
     dataset = StereopsisDataset(data_path)
     dataloader = DataLoader(dataset, batch_size=16, shuffle=True)
