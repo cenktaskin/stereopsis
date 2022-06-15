@@ -50,11 +50,28 @@ def imshow(inp, title=None):
     plt.imshow(inp)
     if title is not None:
         plt.title(title)
-    plt.pause(0.001)  # pause a bit so that plots are updated
+    plt.pause(0.01)  # pause a bit so that plots are updated
+
+
+def plot_res(list_of_pics):
+    i = 1
+    for pic in list_of_pics:
+        plt.subplot(3, 3, i)
+        if i < 3:
+            inp = pic.numpy().transpose((1, 2, 0))
+            mean = np.array([0.485, 0.456, 0.406])
+            std = np.array([0.229, 0.224, 0.225])
+            inp = std * inp + mean
+            inp = np.clip(inp, 0, 1)
+        else:
+            inp = pic
+        plt.imshow(inp)
+        i += 1
+    plt.show()
 
 
 if __name__ == "__main__":
-    data_path = Path("/home/cenkt/git/stereopsis/data/raw/dataset-20220610/")
+    data_path = data_path.joinpath("raw/dataset-20220610/")
 
     dataset = StereopsisDataset(data_path)
     dataloader = DataLoader(dataset, batch_size=16, shuffle=True)
