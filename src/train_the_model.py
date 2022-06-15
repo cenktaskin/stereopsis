@@ -41,6 +41,9 @@ results_path = data_path.joinpath(f"runs/{model.name}-train-{timestamp}")
 writer = SummaryWriter(results_path.joinpath("logs"))
 writer.add_graph(model, [i.to(current_device) for i in next(iter(train_dataloader))[:-1]])
 
+with open(results_path.joinpath('validation_indices.txt'),"w") as f:
+    f.write(validation_dataset.indices)
+
 print(f"Train id: {timestamp}")
 
 # Train the model
