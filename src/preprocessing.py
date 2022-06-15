@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 from dataset import data_path
 from tqdm import tqdm
@@ -67,6 +66,7 @@ with tqdm(total=total_imgs) as pbar:
             ts = img_path.stem[3:]
             raw_image = cv2.imread(img_path.as_posix())
             if not raw_image.any():
+                # in the last dataset there were mjpeg errors causing some frames to be emtpy
                 continue
 
             raw_left, raw_right = np.split(raw_image, 2, axis=1)
