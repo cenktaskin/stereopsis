@@ -10,6 +10,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from dataset import StereopsisDataset, data_path
 from dispnet_loss import MaskedMSE
+import numpy as np
 
 dataset_id = "20220610"
 dataset_path = data_path.joinpath(f"raw/dataset-{dataset_id}")
@@ -41,8 +42,7 @@ results_path = data_path.joinpath(f"runs/{model.name}-train-{timestamp}")
 writer = SummaryWriter(results_path.joinpath("logs"))
 writer.add_graph(model, [i.to(current_device) for i in next(iter(train_dataloader))[:-1]])
 
-with open(results_path.joinpath('validation_indices.txt'),"w") as f:
-    f.write(validation_dataset.indices)
+np.savetxt(results_path.joinpath('validation_indices.txt'),validation_dataset.indices)
 
 print(f"Train id: {timestamp}")
 
