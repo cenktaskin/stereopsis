@@ -47,7 +47,7 @@ with open(results_path.joinpath('validation_indices.txt'),"w") as f:
 print(f"Train id: {timestamp}")
 
 # Train the model
-epochs = 200
+epochs = 30
 batch_count = len(train_dataloader)
 
 report = "RUN REPORT\n------\n"
@@ -71,9 +71,8 @@ for i in range(epochs):
         for j, (x, y) in enumerate(train_dataloader):
             x, y = x.to(current_device), y.to(current_device)
             predictions = model(x)
-            pred = predictions[0]  # coarsest one
+            pred = predictions[int(i//5)]
             interpolated_label = interpolate(y.unsqueeze(dim=1), size=pred.shape[-2:], mode="nearest-exact")
-            # print(interpolated_label.shape)
             loss = loss_fn(pred, interpolated_label)
             optimizer.zero_grad()
             loss.backward()
@@ -103,6 +102,7 @@ for i in range(epochs):
                            {'Training': avg_loss, 'Validation': avg_val_loss},
                            i + 1)
         writer.flush()
+        torch.save(model.state_dict(), results_path.joinpath("model.pth"))
 
 print("Finished training!")
 
@@ -111,5 +111,4 @@ report += f"Trainable parameter count: {sum(p.numel() for p in model.parameters(
 
 with open(results_path.joinpath('report.txt'), "w") as f:
     f.write(report)
-torch.save(model.state_dict(), results_path.joinpath("model.pth"))
 print(f"Dumped logs to {results_path}")
