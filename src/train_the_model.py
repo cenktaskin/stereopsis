@@ -29,7 +29,7 @@ validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, sh
 model_type = "dispnet"
 model_net = getattr(importlib.import_module(f"models.{model_type}"), "NNModel")
 model = model_net().to(current_device)
-model.load_state_dict(torch.load("dispnet_weights.pth"))
+model.load_state_dict(torch.load(data_path.joinpath("raw/dispnet_weights.pth")))
 
 loss_fn = MaskedMSE()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0005)  # was 0.05 on original paper but it is exploding
