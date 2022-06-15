@@ -12,12 +12,12 @@ class MaskedMSE(nn.Module):
         self.mse = nn.MSELoss()
 
     def forward(self, yhat, y):
-        #b, h, w = y.shape
-        y = y.unsqueeze(dim=1)
-        #if (h, w) != yhat.shape[-2:]:
+        # b, h, w = y.shape
+        # y = y.unsqueeze(dim=1)
+        # if (h, w) != yhat.shape[-2:]:
         #    print("needs interpolating")
         #    yhat = interpolate(yhat, size=(h, w), mode="area")
-        #else:
+        # else:
         #    print("doesn't need")
         yhat[y == 0] = 0  # mask the 0.0 elements to not to contribute to the error
         return torch.sqrt(self.mse(yhat, y))
@@ -33,8 +33,9 @@ if __name__ == "__main__":
     train_dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 
     x, y = next(iter(train_dataloader))
+    pred = torch.randn((batch_size, 1, 90, 160))
+    y = interpolate(y.unsqueeze(dim=1), size=pred.shape[-2:], mode="nearest-exact")
 
-    pred = torch.randn((batch_size, 1, 90, 160)) * 0.1 + interpolate(y.unsqueeze(dim=1), (90, 160), mode="area")
     loss_fn = MaskedMSE()
     loss = loss_fn(pred, y)
     print(loss.item())
