@@ -19,7 +19,7 @@ current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 batch_size = 32
 data_split_ratio = 0.98
 dataset = StereopsisDataset(dataset_path)
-batch_norm = True
+batch_norm = False
 
 train_size = int(data_split_ratio * len(dataset))
 val_size = len(dataset) - train_size
@@ -75,7 +75,7 @@ for i in range(epochs):
             predictions = model(x)
             pred = predictions[int(i//(epochs/6))]
             interpolated_label = interpolate(y.unsqueeze(dim=1), size=pred.shape[-2:], mode="nearest-exact")
-            loss = loss_fn(pred, interpolated_label)
+            loss = loss_fn(pred, interpolated_label, j)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -95,7 +95,7 @@ for i in range(epochs):
             for k, (x, y) in enumerate(validation_dataloader):
                 x, y = x.to(current_device), y.to(current_device)
                 y_hat = model(x)
-                running_val_loss += loss_fn(y_hat, y).item()
+                running_val_loss += loss_fn(y_hat, y.unsqueeze(dim=1), k).item()
 
         avg_loss = running_loss / len(train_dataloader)  # loss per batch
         avg_val_loss = running_val_loss / len(validation_dataloader)
@@ -104,7 +104,8 @@ for i in range(epochs):
                            {'Training': avg_loss, 'Validation': avg_val_loss},
                            i + 1)
         writer.flush()
-        torch.save(model.state_dict(), results_path.joinpath("model.pth"))  # carry this out or only at good ones
+
+torch.save(model.state_dict(), results_path.joinpath("model.pth"))  # carry this out or only at good ones
 
 print("Finished training!")
 
