@@ -16,7 +16,7 @@ dataset_id = "20220610"
 dataset_path = data_path.joinpath(f"processed/dataset-{dataset_id}")
 current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-batch_size = 8
+batch_size = 32
 data_split_ratio = 0.98
 dataset = StereopsisDataset(dataset_path)
 
@@ -47,7 +47,7 @@ np.savetxt(results_path.joinpath('validation_indices.txt'), validation_dataset.i
 print(f"Train id: {timestamp}")
 
 # Train the model
-epochs = 30
+epochs = 200
 batch_count = len(train_dataloader)
 
 report = "RUN REPORT\n------\n"
@@ -71,7 +71,7 @@ for i in range(epochs):
         for j, (x, y) in enumerate(train_dataloader):
             x, y = x.to(current_device), y.to(current_device)
             predictions = model(x)
-            pred = predictions[int(i // 5)]
+            pred = predictions[int(i//(epochs/6))]
             interpolated_label = interpolate(y.unsqueeze(dim=1), size=pred.shape[-2:], mode="nearest-exact")
             loss = loss_fn(pred, interpolated_label)
             optimizer.zero_grad()
