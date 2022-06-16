@@ -9,11 +9,11 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from dataset import StereopsisDataset, data_path
-from dispnet_loss import MaskedMSE
+from loss import MaskedMSE
 import numpy as np
 
 dataset_id = "20220610"
-dataset_path = data_path.joinpath(f"raw/dataset-{dataset_id}")
+dataset_path = data_path.joinpath(f"processed/dataset-{dataset_id}")
 current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 batch_size = 8
@@ -30,7 +30,7 @@ validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, sh
 model_type = "dispnet"
 model_net = getattr(importlib.import_module(f"models.{model_type}"), "NNModel")
 model = model_net().to(current_device)
-model.load_state_dict(torch.load(data_path.joinpath("raw/dispnet_weights.pth")))
+model.load_state_dict(torch.load(data_path.joinpath("processed/dispnet_weights.pth")))
 
 loss_fn = MaskedMSE()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0005)  # was 0.05 on original paper but it is exploding
@@ -40,7 +40,7 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2 * 10 ** 5, ga
 timestamp = datetime.now().astimezone(pytz.timezone("Europe/Berlin")).strftime("%Y%m%d%H%M")
 results_path = data_path.joinpath(f"runs/{model.name}-train-{timestamp}")
 writer = SummaryWriter(results_path.joinpath("logs"))
-writer.add_graph(model, [i.to(current_device) for i in next(iter(train_dataloader))[:-1]])
+writer.add_graph(model, next(iter(train_dataloader))[0].to(current_device))
 
 np.savetxt(results_path.joinpath('validation_indices.txt'), validation_dataset.indices)
 
