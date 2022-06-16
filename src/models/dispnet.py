@@ -31,22 +31,46 @@ class NNModel(nn.Module):
             decoder_block(c_in=64)
         ])
 
-    def forward(self, x):
-        contracting_x = {}
-        predictions = []
-        for i, layer in enumerate(self.encoder):
-            x = layer(x)
-            if i == 0 or i % 2 == 1:
-                contracting_x[len(contracting_x) + 1] = x
+    def forward(self, x00):
+        x1b = self.encoder[0](x00)
+        x2b = self.encoder[1](x1b)
+        x3a = self.encoder[2](x2b)
+        x3b = self.encoder[3](x3a)
+        x4a = self.encoder[4](x3b)
+        x4b = self.encoder[5](x4a)
+        x5a = self.encoder[6](x4b)
+        x5b = self.encoder[7](x5a)
+        x6a = self.encoder[8](x5b)
+        x6b = self.encoder[9](x6a)
 
-        predictions.append(self.prediction6(x))
+        pr6 = self.prediction6(x6b)
 
-        for i, block in zip(range(5, 0, -1), self.decoder):
-            x = block["decoder"](x)
-            x = block["merger"](cat([x, block["refiner"](predictions[-1]), contracting_x[i]], 1))
-            predictions.append(block["predictor"](x))
+        block = self.decoder[0]
+        ux5 = block["decoder"](x6b)
+        ix5 = block["merger"](cat([ux5, block["refiner"](pr6), x5b], 1))
+        pr5 = block["predictor"](ix5)
 
-        return predictions
+        block = self.decoder[1]
+        ux4 = block["decoder"](ix5)
+        ix4 = block["merger"](cat([ux4, block["refiner"](pr5), x4b], 1))
+        pr4 = block["predictor"](ix4)
+
+        block = self.decoder[2]
+        ux3 = block["decoder"](ix4)
+        ix3 = block["merger"](cat([ux3, block["refiner"](pr4), x3b], 1))
+        pr3 = block["predictor"](ix3)
+
+        block = self.decoder[3]
+        ux2 = block["decoder"](ix3)
+        ix2 = block["merger"](cat([ux2, block["refiner"](pr3), x2b], 1))
+        pr2 = block["predictor"](ix2)
+
+        block = self.decoder[4]
+        ux1 = block["decoder"](ix2)
+        ix1 = block["merger"](cat([ux1, self.decoder[4]["refiner"](pr2), x1b], 1))
+        pr1 = block["predictor"](ix1)
+
+        return pr6, pr5, pr4, pr3, pr2, pr1
 
 
 def encoder_block(c_in, c_out, batch_norm, padding=1, **kwargs):
