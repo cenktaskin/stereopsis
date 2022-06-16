@@ -70,7 +70,6 @@ for i in range(epochs):
         running_loss = 0
         for j, (x, y) in enumerate(train_dataloader):
             x, y = x.to(current_device), y.to(current_device)
-            x = interpolate(x, size=(180, 360), mode="nearest-exact")
             predictions = model(x)
             pred = predictions[int(i // 5)]
             interpolated_label = interpolate(y.unsqueeze(dim=1), size=pred.shape[-2:], mode="nearest-exact")
