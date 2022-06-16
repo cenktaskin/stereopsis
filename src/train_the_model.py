@@ -19,6 +19,7 @@ current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 batch_size = 32
 data_split_ratio = 0.98
 dataset = StereopsisDataset(dataset_path)
+batch_norm = True
 
 train_size = int(data_split_ratio * len(dataset))
 val_size = len(dataset) - train_size
@@ -29,7 +30,7 @@ validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, sh
 
 model_type = "dispnet"
 model_net = getattr(importlib.import_module(f"models.{model_type}"), "NNModel")
-model = model_net().to(current_device)
+model = model_net(batch_norm).to(current_device)
 model.load_state_dict(torch.load(data_path.joinpath("processed/dispnet_weights.pth")))
 
 loss_fn = MaskedMSE()
@@ -57,6 +58,7 @@ report += f"Using {current_device} device\n"
 report += f"Dataset: {dataset_id}\n"
 report += f"Data instances: Train->{train_size}, Validation->{val_size}\n"
 report += f"Batch size: {batch_size}\n"
+report += f"Batch normalisation: {batch_norm}\n"
 report += f"Epochs: {epochs}\n"
 report += f"Loss function: \n{loss_fn}\n"
 report += f"Optimizer: \n{optimizer}\n"
