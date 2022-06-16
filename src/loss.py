@@ -10,10 +10,7 @@ class MaskedMSE(torch.nn.Module):
         super().__init__()
         self.mse = torch.nn.MSELoss()
 
-    def forward(self, yhat, y, i):
-        if i == 0:
-            print(f"{yhat.size()=}")
-            print(f"{y.size()=}")
+    def forward(self, yhat, y):
         yhat[y == 0] = 0  # mask the 0.0 elements to not to contribute to the error
         return torch.sqrt(self.mse(yhat, y))
 

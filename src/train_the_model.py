@@ -75,7 +75,7 @@ for i in range(epochs):
             predictions = model(x)
             pred = predictions[int(i//(epochs/6))]
             interpolated_label = interpolate(y.unsqueeze(dim=1), size=pred.shape[-2:], mode="nearest-exact")
-            loss = loss_fn(pred, interpolated_label, j)
+            loss = loss_fn(pred, interpolated_label)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -94,8 +94,9 @@ for i in range(epochs):
         with torch.no_grad():
             for k, (x, y) in enumerate(validation_dataloader):
                 x, y = x.to(current_device), y.to(current_device)
-                y_hat = model(x)
-                running_val_loss += loss_fn(y_hat, y.unsqueeze(dim=1), k).item()
+                predictions = model(x)
+                pred = predictions[-1]
+                running_val_loss += loss_fn(pred, y.unsqueeze(dim=1)).item()
 
         avg_loss = running_loss / len(train_dataloader)  # loss per batch
         avg_val_loss = running_val_loss / len(validation_dataloader)
