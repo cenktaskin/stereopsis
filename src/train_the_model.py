@@ -42,7 +42,7 @@ results_path = data_path.joinpath(f"runs/{model.name}-train-{timestamp}")
 writer = SummaryWriter(results_path.joinpath("logs"))
 writer.add_graph(model, [i.to(current_device) for i in next(iter(train_dataloader))[:-1]])
 
-np.savetxt(results_path.joinpath('validation_indices.txt'),validation_dataset.indices)
+np.savetxt(results_path.joinpath('validation_indices.txt'), validation_dataset.indices)
 
 print(f"Train id: {timestamp}")
 
@@ -70,8 +70,9 @@ for i in range(epochs):
         running_loss = 0
         for j, (x, y) in enumerate(train_dataloader):
             x, y = x.to(current_device), y.to(current_device)
+            x = interpolate(x, size=(180, 360), mode="nearest-exact")
             predictions = model(x)
-            pred = predictions[int(i//5)]
+            pred = predictions[int(i // 5)]
             interpolated_label = interpolate(y.unsqueeze(dim=1), size=pred.shape[-2:], mode="nearest-exact")
             loss = loss_fn(pred, interpolated_label)
             optimizer.zero_grad()
@@ -102,7 +103,7 @@ for i in range(epochs):
                            {'Training': avg_loss, 'Validation': avg_val_loss},
                            i + 1)
         writer.flush()
-        torch.save(model.state_dict(), results_path.joinpath("model.pth"))
+        torch.save(model.state_dict(), results_path.joinpath("model.pth"))  # carry this out or only at good ones
 
 print("Finished training!")
 

@@ -12,7 +12,7 @@ class NNModel(nn.Module):
         self.conv2a = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=5, stride=2, padding=2)
         self.conv3a = nn.Conv2d(in_channels=128, out_channels=256, kernel_size=5, stride=2, padding=2)
         self.conv3b = nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, stride=1, padding=1)
-        self.conv4a = nn.Conv2d(in_channels=256, out_channels=512, kernel_size=3, stride=2, padding=(0, 1))
+        self.conv4a = nn.Conv2d(in_channels=256, out_channels=512, kernel_size=3, stride=2, padding=1)
         self.conv4b = nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3, stride=1, padding=1)
         self.conv5a = nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3, stride=2, padding=1)
         self.conv5b = nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3, stride=1, padding=1)
@@ -31,8 +31,8 @@ class NNModel(nn.Module):
         self.iconv4 = nn.Conv2d(in_channels=769, out_channels=256, kernel_size=3, stride=1, padding=1)
         self.pr4 = nn.Conv2d(in_channels=256, out_channels=1, kernel_size=3, stride=1, padding=1)
 
-        self.up4to3 = nn.ConvTranspose2d(in_channels=1, out_channels=1, kernel_size=4, stride=2, padding=(0, 1))
-        self.upconv3 = nn.ConvTranspose2d(in_channels=256, out_channels=128, kernel_size=4, stride=2, padding=(0, 1))
+        self.up4to3 = nn.ConvTranspose2d(in_channels=1, out_channels=1, kernel_size=4, stride=2, padding=1)
+        self.upconv3 = nn.ConvTranspose2d(in_channels=256, out_channels=128, kernel_size=4, stride=2, padding=1)
         self.iconv3 = nn.Conv2d(in_channels=385, out_channels=128, kernel_size=3, stride=1, padding=1)
         self.pr3 = nn.Conv2d(in_channels=128, out_channels=1, kernel_size=3, stride=1, padding=1)
 
@@ -108,3 +108,12 @@ class NNModel(nn.Module):
         #print(f"{pr1.shape=}")
 
         return pr6, pr5, pr4, pr3, pr2, pr1
+
+
+if __name__ == "__main__":
+    from torch import randn
+
+    original_res = (384, 768)
+    network = NNModel()
+    dummy_input = randn((1, 6, *original_res))
+    output = network(dummy_input)
