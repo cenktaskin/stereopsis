@@ -96,7 +96,8 @@ for i in range(epochs):
                 x, y = x.to(current_device), y.to(current_device)
                 predictions = model(x)
                 pred = predictions[-1]
-                running_val_loss += loss_fn(pred, y.unsqueeze(dim=1)).item()
+                interpolated_label = interpolate(y.unsqueeze(dim=1), size=pred.shape[-2:], mode="nearest-exact")
+                running_val_loss += loss_fn(pred, interpolated_label).item()
 
         avg_loss = running_loss / len(train_dataloader)  # loss per batch
         avg_val_loss = running_val_loss / len(validation_dataloader)
