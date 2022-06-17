@@ -31,7 +31,7 @@ class MaskedMSE(torch.nn.Module):
         for i in current_weights.nonzero():
             upsampled_pred = interpolate(preds[i], size=y.shape[-2:], mode="bilinear")
             upsampled_pred[y == 0] = 0  # mask the 0.0 elements
-            loss += torch.sqrt(self.mse(upsampled_pred, y)) * current_weights[i]
+            loss += torch.sqrt(self.mse(upsampled_pred, y)) * current_weights[i].item()
 
         return loss
 
