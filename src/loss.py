@@ -15,7 +15,7 @@ class MaskedMSE(torch.nn.Module):
                                   [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]])
 
     breakpoints = torch.tensor([50 * 10 ** 3, 0.1 * 10 ** 6, 0.15 * 10 ** 6,
-                                0.25 * 10 ** 6, 0.35 * 10 ** 6, 0.45 * 10 ** 6])
+                                0.25 * 10 ** 6, 0.35 * 10 ** 6, 0.45 * 10 ** 6]) / 30  # divided by 30 for fastness
 
     def __init__(self):
         super().__init__()
