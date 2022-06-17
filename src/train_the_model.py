@@ -15,10 +15,12 @@ dataset_id = "20220610"
 dataset_path = data_path.joinpath(f"processed/dataset-{dataset_id}")
 current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+epochs = 25
 batch_size = 32
 data_split_ratio = 0.98
 dataset = StereopsisDataset(dataset_path)
 batch_norm = False
+pretrained = True
 
 train_size = int(data_split_ratio * len(dataset))
 val_size = len(dataset) - train_size
@@ -26,14 +28,12 @@ train_dataset, validation_dataset = torch.utils.data.random_split(dataset, [trai
 
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+batch_count = len(train_dataloader)
 
 model_type = "dispnet"
 model_net = getattr(importlib.import_module(f"models.{model_type}"), "NNModel")
 model = model_net(batch_norm).to(current_device)
 model.load_state_dict(torch.load(data_path.joinpath("processed/dispnet_weights.pth")))
-
-epochs = 25
-batch_count = len(train_dataloader)
 
 loss_fn = MaskedMSE()
 optimizer = torch.optim.Adam(model.parameters(), lr=10 ** -4)  # was 0.05 on original paper but it is exploding
@@ -55,6 +55,7 @@ print(f"Train id: {timestamp}")
 report = "RUN REPORT\n------\n"
 report += f"Train id: {timestamp}\n"
 report += f"Model name: {model.name}\n"
+report += f"Pretrained: {pretrained}\n"
 report += f"Using {current_device} device\n"
 report += f"Dataset: {dataset_id}\n"
 report += f"Data instances: Train->{train_size}, Validation->{val_size}\n"
@@ -64,6 +65,10 @@ report += f"Epochs: {epochs}\n"
 report += f"Loss function: \n{loss_fn}\n"
 report += f"Optimizer: \n{optimizer}\n"
 print(report)
+report += f"Model Summary:\n{model.__str__()}\n"
+report += f"Trainable parameter count: {sum(p.numel() for p in model.parameters() if p.requires_grad)}"
+with open(results_path.joinpath('report.txt'), "w") as f:
+    f.write(report)
 for i in range(epochs):
     with tqdm(total=batch_count, unit="batch", leave=False) as pbar:
         pbar.set_description(f"Epoch [{i:4d}/{epochs:4d}]")
@@ -110,13 +115,7 @@ for i in range(epochs):
         optimizer = torch.optim.Adam(model.parameters(), lr=10 ** -4)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
         # save every round
-        torch.save(model.state_dict(), results_path.joinpath(f"model-e{i+1}.pth"))
+        torch.save(model.state_dict(), results_path.joinpath(f"model-e{i + 1}.pth"))
 
 print("Finished training!")
-
-report += f"Model Summary:\n{model.__str__()}\n"
-report += f"Trainable parameter count: {sum(p.numel() for p in model.parameters() if p.requires_grad)}"
-
-with open(results_path.joinpath('report.txt'), "w") as f:
-    f.write(report)
 print(f"Dumped logs to {results_path}")
