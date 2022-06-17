@@ -106,11 +106,11 @@ for i in range(epochs):
                            i + 1)
         writer.flush()
 
-    if i % 20 == 0:
+    if i % 20 == 19:
         optimizer = torch.optim.Adam(model.parameters(), lr=10 ** -4)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
-
-torch.save(model.state_dict(), results_path.joinpath("model.pth"))  # carry this out or only at good ones
+        # save every round
+        torch.save(model.state_dict(), results_path.joinpath(f"model-e{i+1}.pth"))
 
 print("Finished training!")
 
