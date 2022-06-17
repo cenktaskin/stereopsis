@@ -4,7 +4,6 @@ from tqdm import tqdm
 import importlib
 
 import torch
-from torch.nn.functional import interpolate
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
@@ -33,13 +32,12 @@ model_net = getattr(importlib.import_module(f"models.{model_type}"), "NNModel")
 model = model_net(batch_norm).to(current_device)
 model.load_state_dict(torch.load(data_path.joinpath("processed/dispnet_weights.pth")))
 
-epochs = 200
+epochs = 25
 batch_count = len(train_dataloader)
 
 loss_fn = MaskedMSE()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0005)  # was 0.05 on original paper but it is exploding
-# scheduler should rather start decaying after 400k and update each 200k but this is too high for now
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2 * 10 ** 4, gamma=0.5)
+optimizer = torch.optim.Adam(model.parameters(), lr=10 ** -4)  # was 0.05 on original paper but it is exploding
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
 
 timestamp = datetime.now().astimezone(pytz.timezone("Europe/Berlin")).strftime("%Y%m%d%H%M")
 results_path = data_path.joinpath(f"runs/{model.name}-train-{timestamp}")
@@ -107,6 +105,10 @@ for i in range(epochs):
                            {'Training': avg_loss, 'Validation': avg_val_loss},
                            i + 1)
         writer.flush()
+
+    if i % 20 == 0:
+        optimizer = torch.optim.Adam(model.parameters(), lr=10 ** -4)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
 
 torch.save(model.state_dict(), results_path.joinpath("model.pth"))  # carry this out or only at good ones
 
