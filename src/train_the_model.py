@@ -69,6 +69,7 @@ report += f"Model Summary:\n{model.__str__()}\n"
 report += f"Trainable parameter count: {sum(p.numel() for p in model.parameters() if p.requires_grad)}"
 with open(results_path.joinpath('report.txt'), "w") as f:
     f.write(report)
+each_round = epochs // 4
 for i in range(epochs):
     with tqdm(total=batch_count, unit="batch", leave=False) as pbar:
         pbar.set_description(f"Epoch [{i:4d}/{epochs:4d}]")
@@ -111,7 +112,7 @@ for i in range(epochs):
                            i + 1)
         writer.flush()
 
-    if i % 20 == 19:
+    if i % each_round == each_round - 1:
         optimizer = torch.optim.Adam(model.parameters(), lr=10 ** -4)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
         # save every round
