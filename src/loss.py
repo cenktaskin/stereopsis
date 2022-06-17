@@ -5,6 +5,7 @@ from dataset import StereopsisDataset, data_path
 
 
 class MaskedMSE(torch.nn.Module):
+    name = "dispnet_loss"
     # rows are for each loss layer from 6 to 1
     loss_schedule = torch.tensor([[1.0, 0.2, 0.0, 0.0, 0.0, 0.0],
                                   [0.5, 1.0, 0.2, 0.0, 0.0, 0.0],
@@ -51,4 +52,5 @@ if __name__ == "__main__":
     pr_list = tuple([torch.randn(batch_size, 1, *initial_size * 2 ** i) for i in range(6)])
 
     loss_fn = MaskedMSE()
+    print(loss_fn.name)
     print(loss_fn(pr_list, sample_y, 1))

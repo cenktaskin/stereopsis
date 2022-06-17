@@ -62,7 +62,7 @@ report += f"Data instances: Train->{train_size}, Validation->{val_size}\n"
 report += f"Batch size: {batch_size}\n"
 report += f"Batch normalisation: {batch_norm}\n"
 report += f"Epochs: {epochs}\n"
-report += f"Loss function: \n{loss_fn}\n"
+report += f"Loss function: \n{loss_fn.name}\n"
 report += f"Optimizer: \n{optimizer}\n"
 print(report)
 report += f"Model Summary:\n{model.__str__()}\n"
