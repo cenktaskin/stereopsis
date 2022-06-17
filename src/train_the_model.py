@@ -33,10 +33,13 @@ model_net = getattr(importlib.import_module(f"models.{model_type}"), "NNModel")
 model = model_net(batch_norm).to(current_device)
 model.load_state_dict(torch.load(data_path.joinpath("processed/dispnet_weights.pth")))
 
+epochs = 200
+batch_count = len(train_dataloader)
+
 loss_fn = MaskedMSE()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0005)  # was 0.05 on original paper but it is exploding
-# scheduler should rather start decaying after 400k according to paper but this is more useful
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2 * 10 ** 5, gamma=0.5)
+# scheduler should rather start decaying after 400k and update each 200k but this is too high for now
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2 * 10 ** 4, gamma=0.5)
 
 timestamp = datetime.now().astimezone(pytz.timezone("Europe/Berlin")).strftime("%Y%m%d%H%M")
 results_path = data_path.joinpath(f"runs/{model.name}-train-{timestamp}")
@@ -45,11 +48,11 @@ writer.add_graph(model, next(iter(train_dataloader))[0].to(current_device))
 
 np.savetxt(results_path.joinpath('validation_indices.txt'), validation_dataset.indices)
 
+loss_milestones = np.array([50 * 10 ** 3, 100 * 10 ** 3, 150 * 10 ** 3, 250 * 10 ** 3, 350 * 10 ** 3, 450 * 10 ** 3])
+
 print(f"Train id: {timestamp}")
 
 # Train the model
-epochs = 200
-batch_count = len(train_dataloader)
 
 report = "RUN REPORT\n------\n"
 report += f"Train id: {timestamp}\n"
@@ -71,22 +74,22 @@ for i in range(epochs):
         model.train()
         running_loss = 0
         for j, (x, y) in enumerate(train_dataloader):
+            batch_idx = i * batch_count + j + 1
+
             x, y = x.to(current_device), y.to(current_device)
             predictions = model(x)
-            pred = predictions[int(i//(epochs/6))]
-            interpolated_label = interpolate(y.unsqueeze(dim=1), size=pred.shape[-2:], mode="nearest-exact")
-            loss = loss_fn(pred, interpolated_label)
+            loss = loss_fn(predictions, y, batch_idx)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            scheduler.step()
 
             train_loss = loss.item()
             running_loss += train_loss
-            batch_idx = i * batch_count + j + 1
             writer.add_scalar("Loss/train", train_loss, batch_idx)
             pbar.set_postfix(loss=f"{train_loss:.4f}")
             pbar.update(True)
+
+        scheduler.step()
 
         # Validation
         running_val_loss = 0
@@ -95,9 +98,7 @@ for i in range(epochs):
             for k, (x, y) in enumerate(validation_dataloader):
                 x, y = x.to(current_device), y.to(current_device)
                 predictions = model(x)
-                pred = predictions[-1]
-                interpolated_label = interpolate(y.unsqueeze(dim=1), size=pred.shape[-2:], mode="nearest-exact")
-                running_val_loss += loss_fn(pred, interpolated_label).item()
+                running_val_loss += loss_fn(predictions, y, 10 ** 6).item()  # batch idx=1mil to only activate last loss
 
         avg_loss = running_loss / len(train_dataloader)  # loss per batch
         avg_val_loss = running_val_loss / len(validation_dataloader)
