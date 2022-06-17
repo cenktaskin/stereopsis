@@ -4,8 +4,9 @@ from torch import nn, cat
 class NNModel(nn.Module):
     name = 'dispnet'
 
-    def __init__(self, batch_norm=False):
+    def __init__(self, batch_norm=False, verbose=False):
         super(NNModel, self).__init__()
+        self.verbose = verbose
 
         self.encoder = nn.ModuleList([
             encoder_block(c_in=6, c_out=64, batch_norm=batch_norm, kernel_size=7, stride=2, padding=3),
@@ -35,16 +36,25 @@ class NNModel(nn.Module):
         predictions = ()
         for i, layer in enumerate(self.encoder):
             x = layer(x)
+            if self.verbose:
+                print(f"encoder{i}->{x.shape}")
             if i == 0 or i % 2 == 1:
                 contracting_x = contracting_x + (x,)
 
         predictions = predictions + (self.prediction6(x),)
+        if self.verbose:
+            print(f"prediction6->{predictions[-1].shape}")
 
         for i, block in zip(range(5, 0, -1), self.decoder):
             x = block["decoder"](x)
+            if self.verbose:
+                print(f"decoder{i}->{x.shape}")
             x = block["merger"](cat([x, block["refiner"](predictions[-1]), contracting_x[i - 1]], 1))
+            if self.verbose:
+                print(f"merger{i}->{x.shape}")
             predictions = predictions + (block["predictor"](x),)
-
+            if self.verbose:
+                print(f"prediction{i}->{x.shape}")
         return predictions
 
 
@@ -86,8 +96,8 @@ if __name__ == "__main__":
     from torch import randn
 
     original_res = (384, 768)
-    network = NNModel()
+    network = NNModel(verbose=True)
     dummy_input = randn((1, 6, *original_res))
     output = network(dummy_input)
-    for j in network.named_parameters():
-        print(j[0], j[1].size())
+    #for j in network.named_parameters():
+    #    print(j[0], j[1].size())
