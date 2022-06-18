@@ -8,11 +8,12 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from dataset import StereopsisDataset, data_path
-from loss import MaskedMSE
+from loss import MultilayerSmoothL1, MaskedEPE
 import numpy as np
 
 dataset_id = "20220610"
-dataset_path = data_path.joinpath(f"processed/dataset-{dataset_id}")
+dataset_type = "origres"
+dataset_path = data_path.joinpath(f"processed/dataset-{dataset_id}-{dataset_type}")
 current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 epochs = 25
@@ -28,14 +29,15 @@ train_dataset, validation_dataset = torch.utils.data.random_split(dataset, [trai
 
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-batch_count = len(train_dataloader)
+train_batch_count = len(train_dataloader)
 
 model_type = "dispnet"
 model_net = getattr(importlib.import_module(f"models.{model_type}"), "NNModel")
 model = model_net(batch_norm).to(current_device)
 model.load_state_dict(torch.load(data_path.joinpath("processed/dispnet_weights.pth")))
 
-loss_fn = MaskedMSE()
+loss_fn = MultilayerSmoothL1()
+accuracy_fn = MaskedEPE()
 optimizer = torch.optim.Adam(model.parameters(), lr=10 ** -4)  # was 0.05 on original paper but it is exploding
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
 
@@ -71,14 +73,14 @@ with open(results_path.joinpath('report.txt'), "w") as f:
     f.write(report)
 each_round = epochs // 4
 for i in range(epochs):
-    with tqdm(total=batch_count, unit="batch", leave=False) as pbar:
+    with tqdm(total=train_batch_count, unit="batch", leave=False) as pbar:
         pbar.set_description(f"Epoch [{i:4d}/{epochs:4d}]")
 
         # Training
         model.train()
-        running_loss = 0
+        running_train_epe = 0
         for j, (x, y) in enumerate(train_dataloader):
-            batch_idx = i * batch_count + j + 1
+            batch_idx = i * len(train_dataloader) + j + 1
 
             x, y = x.to(current_device), y.to(current_device)
             predictions = model(x)
@@ -88,7 +90,8 @@ for i in range(epochs):
             optimizer.step()
 
             train_loss = loss.item()
-            running_loss += train_loss
+            running_train_epe += accuracy_fn(predictions, y).item()
+
             writer.add_scalar("Loss/train", train_loss, batch_idx)
             pbar.set_postfix(loss=f"{train_loss:.4f}")
             pbar.update(True)
@@ -96,19 +99,19 @@ for i in range(epochs):
         scheduler.step()
 
         # Validation
-        running_val_loss = 0
+        running_val_epe = 0
         model.eval()
         with torch.no_grad():
             for k, (x, y) in enumerate(validation_dataloader):
                 x, y = x.to(current_device), y.to(current_device)
                 predictions = model(x)
-                running_val_loss += loss_fn(predictions, y, 10 ** 6).item()  # batch idx=1mil to only activate last loss
+                running_val_epe += accuracy_fn(predictions, y).item()
 
-        avg_loss = running_loss / len(train_dataloader)  # loss per batch
-        avg_val_loss = running_val_loss / len(validation_dataloader)
+        avg_train_epe = running_train_epe / train_batch_count  # loss per batch
+        avg_val_epe = running_val_epe / len(validation_dataloader)
 
-        writer.add_scalars('Avg Losses per Epoch',
-                           {'Training': avg_loss, 'Validation': avg_val_loss},
+        writer.add_scalars('Learning Curve [EPE/Epoch]',
+                           {'Training': avg_train_epe, 'Validation': avg_val_epe},
                            i + 1)
         writer.flush()
 
