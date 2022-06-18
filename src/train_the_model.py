@@ -16,9 +16,9 @@ dataset_type = "origres"
 dataset_path = data_path.joinpath(f"processed/dataset-{dataset_id}-{dataset_type}")
 current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-epochs = 25
+epochs = 5
 batch_size = 32
-data_split_ratio = 0.98
+data_split_ratio = 0.99
 dataset = StereopsisDataset(dataset_path)
 batch_norm = False
 pretrained = True
@@ -47,8 +47,6 @@ writer = SummaryWriter(results_path.joinpath("logs"))
 writer.add_graph(model, next(iter(train_dataloader))[0].to(current_device))
 
 np.savetxt(results_path.joinpath('validation_indices.txt'), validation_dataset.indices)
-
-loss_milestones = np.array([50 * 10 ** 3, 100 * 10 ** 3, 150 * 10 ** 3, 250 * 10 ** 3, 350 * 10 ** 3, 450 * 10 ** 3])
 
 print(f"Train id: {timestamp}")
 
