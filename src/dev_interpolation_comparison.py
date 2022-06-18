@@ -1,72 +1,55 @@
-from PIL import Image
-from cv2 import cv2
+import cv2
+import torch
+import torchvision.transforms
+from torch.utils.data import DataLoader
+
+import math
+from dataset import StereopsisDataset, data_path
 import matplotlib.pyplot as plt
 
-import torch
-import torchvision
-import numpy as np
-from dataset import data_path
+def show_comparison_results(imgs, titles, col_count=2):
+    row_count = math.ceil(len(imgs) / col_count)
+    titles = ["original"] + titles
+    for i, img in enumerate(imgs):
+        plt.subplot(row_count, col_count, i + 1)
+        try:
+            plt.title(f"{titles[i]} - max:{img.max():.4f}")
+        except:
+            pass
+        plt.imshow(img, interpolation=None)
+    plt.subplots_adjust(hspace=0.25)
+    plt.show()
 
-img_path = data_path.joinpath("raw/dataset-20220610")
-ts = np.random.choice(list(img_path.glob("sl*"))).stem[3:]
-img_l = Image.open(img_path.joinpath(f"sl_{ts}.tiff"))
-img_r = Image.open(img_path.joinpath(f"sr_{ts}.tiff"))
-img_d = np.array(Image.open(img_path.joinpath(f"dp_{ts}.tiff")))
 
-# pool = torch.nn.AvgPool2d(kernel_size=3)
-# output = pool(img_d)
+dataset_id = "20220610"
+dataset_path = data_path.joinpath(f"processed/dataset-{dataset_id}-origres")
+current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-img_d2 = cv2.imread(img_path.joinpath(f"dp_{ts}.tiff").as_posix(), flags=cv2.IMREAD_UNCHANGED)
-print(img_d.max())
-print(img_d.min())
-print(img_d2.shape)
-print(img_d2.dtype)
-print(img_d2.max())
-print(img_d2.min())
-tensor_img = torch.from_numpy(img_d2).unsqueeze(dim=0).unsqueeze(dim=0)
-print(tensor_img.shape)
-print(tensor_img.dtype)
-print(tensor_img.max())
-print(tensor_img.min())
+batch_size = 1
+data_split_ratio = 0.98
+dataset = StereopsisDataset(dataset_path)
+dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
 
-plt.subplot(1, 2, 1)
-plt.title("pillow")
-plt.imshow(img_d)
-plt.subplot(1, 2, 2)
-plt.title("cv")
-plt.imshow(img_d2)
-plt.show()
-exit()
+sample_x, sample_y = next(iter(dataloader))
 
-new_size = [11, 20]
-depth_interpolated = torch.nn.functional.interpolate(tensor_img, size=new_size, mode="nearest")
-print(depth_interpolated.dtype)
-print(depth_interpolated.max())
-print(depth_interpolated.min())
+new_size = [384, 768]
 
-depth_interpolated2 = torch.nn.functional.interpolate(tensor_img, size=new_size, mode="nearest-exact")  # winner
-print(depth_interpolated2.dtype)
-print(depth_interpolated2.max())
-print(depth_interpolated2.min())
+cv_sample = sample_y.squeeze().numpy()
+cv_modes = [cv2.INTER_LINEAR, cv2.INTER_LINEAR_EXACT]
 
-depth_interpolated3 = torch.nn.functional.interpolate(tensor_img, size=new_size, mode="bilinear")
-print(depth_interpolated3.dtype)
-print(depth_interpolated3.max())
-print(depth_interpolated3.min())
+cv_res = [cv2.resize(cv_sample, dsize=new_size[::-1], interpolation=m) for m in cv_modes]
+cv_res = [cv_sample] + cv_res
 
-plt.subplot(2, 2, 1)
-plt.title("original")
-plt.imshow(img_d)
-plt.subplot(2, 2, 2)
-plt.title("nearest")
-plt.imshow(depth_interpolated.squeeze())
-plt.subplot(2, 2, 3)
-plt.title("nearest-exact")
-plt.imshow(depth_interpolated2.squeeze())
-plt.subplot(2, 2, 4)
-plt.title("bilinear")
-plt.imshow(depth_interpolated3.squeeze())
-plt.show()
+scale_count = 6
+avg_layers = [torch.nn.AvgPool2d(kernel_size=2 ** (i + 1)) for i in range(scale_count)]
+max_layers = [torch.nn.MaxPool2d(kernel_size=2 ** (i + 1)) for i in range(scale_count)]
 
-# loader = torch.load('val_loader.pth')
-# print(loader.dataset.indices)
+to_tens = torchvision.transforms.ToTensor()
+tit = ["bilinear", "nearest-exact"]
+res = []
+for s in avg_layers:
+    for img in cv_res:
+        res += s(to_tens(img))
+        print(res[-1].shape)
+
+show_comparison_results(cv_res + res, tit, col_count=3)
