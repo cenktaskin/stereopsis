@@ -44,6 +44,7 @@ class MaskedEPE(torch.nn.Module):
         self.mse = torch.nn.MSELoss()
 
     def forward(self, preds, y):
+        y = assert_label_dims(y)
         full_res_pred = preds[-1]
         upsampled_pred = interpolate(full_res_pred, size=y.shape[-2:], mode="area")
         upsampled_pred[y == 0] = 0  # mask the 0.0 elements
@@ -54,7 +55,6 @@ def assert_label_dims(y):
     if y.dim() == 3:  # for grayscale img
         y = y.unsqueeze(dim=1)
     return y
-
 
 
 if __name__ == "__main__":
