@@ -67,8 +67,8 @@ target_sample_res = (384, 768)
 target_label_res = target_sample_res
 if dataset_type == "origres":
     target_label_res = (112, 224)
-sample_resizer = ImageResizer(target_sample_res, True)
-label_resizer = ImageResizer(target_label_res, True)
+sample_resizer = ImageResizer(target_sample_res)
+label_resizer = ImageResizer(target_label_res)
 
 clean_dataset_path = data_path.joinpath(f"processed/dataset-20220610-{dataset_type}/")
 if not clean_dataset_path.exists():
@@ -90,7 +90,7 @@ with tqdm(total=total_imgs) as pbar:
             img_left = sample_resizer(raw_left)
             img_right = sample_resizer(raw_right)
             img_label = label_resizer(raw_label)
-            # cv2.imwrite(clean_dataset_path.joinpath(f"sl_{ts}.tiff").as_posix(), img_left)
-            # cv2.imwrite(clean_dataset_path.joinpath(f"sr_{ts}.tiff").as_posix(), img_right)
-            # cv2.imwrite(clean_dataset_path.joinpath(f"dp_{ts}.tiff").as_posix(), img_label)
+            cv2.imwrite(clean_dataset_path.joinpath(f"sl_{ts}.tiff").as_posix(), img_left)
+            cv2.imwrite(clean_dataset_path.joinpath(f"sr_{ts}.tiff").as_posix(), img_right)
+            cv2.imwrite(clean_dataset_path.joinpath(f"dp_{ts}.tiff").as_posix(), img_label)
             pbar.update(1)
