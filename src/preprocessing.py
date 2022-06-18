@@ -31,7 +31,7 @@ class ImageResizer(object):
         return img[self.h_slice, :]
 
     def resize_img(self, img):
-        return cv2.resize(img, self.target_shape[::-1], interpolation=cv2.INTER_AREA)
+        return cv2.resize(img, self.target_shape[::-1], interpolation=cv2.INTER_LINEAR_EXACT)
 
     def __call__(self, img):
         if not self.h_slice:
@@ -43,20 +43,22 @@ class ImageResizer(object):
             return cropped
         resized = self.resize_img(cropped)
         if self.verbose:
-            print(f"Resized {img.shape} -> {resized.shape}")
+            print(f"Resized {cropped.shape} -> {resized.shape}")
         return resized
 
 
+dataset_type = "fullres"
 # after making sure it works, you can turns this into glob
 acquired_datasets = ["202206101932", "202206101937", "202206101612"]
 data_dirs = [data_path.joinpath(f"raw/rawdata-{d}") for d in acquired_datasets]
 
 total_imgs = sum([sum([len(files) for _, _, files in os.walk(i)]) for i in data_dirs]) // 2
 
-sample_resizer = ImageResizer((384, 768))
-label_resizer = ImageResizer((112, 224))
+img_res = (384, 768)
+sample_resizer = ImageResizer(img_res)
+label_resizer = ImageResizer(img_res)
 
-clean_dataset_path = data_path.joinpath(f"processed/dataset-20220610/")
+clean_dataset_path = data_path.joinpath(f"processed/dataset-20220610-{dataset_type}/")
 if not clean_dataset_path.exists():
     clean_dataset_path.mkdir()
 
@@ -76,8 +78,8 @@ with tqdm(total=total_imgs) as pbar:
             img_left = sample_resizer(raw_left)
             img_right = sample_resizer(raw_right)
             img_label = label_resizer(raw_label)
-
-            cv2.imwrite(clean_dataset_path.joinpath(f"sl_{ts}.tiff").as_posix(), img_left)
-            cv2.imwrite(clean_dataset_path.joinpath(f"sr_{ts}.tiff").as_posix(), img_right)
-            cv2.imwrite(clean_dataset_path.joinpath(f"dp_{ts}.tiff").as_posix(), img_label)
+            exit()
+            # cv2.imwrite(clean_dataset_path.joinpath(f"sl_{ts}.tiff").as_posix(), img_left)
+            # cv2.imwrite(clean_dataset_path.joinpath(f"sr_{ts}.tiff").as_posix(), img_right)
+            # cv2.imwrite(clean_dataset_path.joinpath(f"dp_{ts}.tiff").as_posix(), img_label)
             pbar.update(1)
