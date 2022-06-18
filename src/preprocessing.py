@@ -16,47 +16,59 @@ class ImageResizer(object):
         self.target_aspect_ratio = self.target_shape[1] / self.target_shape[0]
         self.h_slice = None
         self.verbose = verbose
+        self.resize_method = None
 
     def init_raw_size(self, sample):
         self.initial_h = sample.shape[0]
         self.initial_w = sample.shape[1]
         self.calculate_slices()
+        self.define_method()
 
     def calculate_slices(self):
         h_crop_target = int(self.initial_w / self.target_aspect_ratio)
         reduce_h_amount = self.initial_h - h_crop_target
         self.h_slice = slice(reduce_h_amount // 2, h_crop_target + reduce_h_amount // 2)
 
+    def define_method(self):
+        method = cv2.INTER_AREA
+        if self.initial_h * self.initial_w < self.target_shape[0] * self.target_shape[1]:
+            method = cv2.INTER_LINEAR_EXACT
+        self.resize_method = method
+
     def crop_img(self, img):
-        return img[self.h_slice, :]
+        res = img[self.h_slice, :]
+        if self.verbose:
+            print(f"Cropped {img.shape} -> {res.shape}")
+        return res
 
     def resize_img(self, img):
-        return cv2.resize(img, self.target_shape[::-1], interpolation=cv2.INTER_LINEAR_EXACT)
+        res = cv2.resize(img, self.target_shape[::-1], interpolation=self.resize_method)
+        if self.verbose:
+            print(f"Resized {img.shape} -> {res.shape} via method:{self.resize_method}")
+        return res
 
     def __call__(self, img):
         if not self.h_slice:
             self.init_raw_size(img)
         cropped = self.crop_img(img)
-        if self.verbose:
-            print(f"Cropped {img.shape} -> {cropped.shape}")
         if cropped.shape == self.target_shape:
             return cropped
-        resized = self.resize_img(cropped)
-        if self.verbose:
-            print(f"Resized {cropped.shape} -> {resized.shape}")
-        return resized
+        return self.resize_img(cropped)
 
 
-dataset_type = "fullres"
+dataset_type = "fullres" # fullres or origres
 # after making sure it works, you can turns this into glob
 acquired_datasets = ["202206101932", "202206101937", "202206101612"]
 data_dirs = [data_path.joinpath(f"raw/rawdata-{d}") for d in acquired_datasets]
 
 total_imgs = sum([sum([len(files) for _, _, files in os.walk(i)]) for i in data_dirs]) // 2
 
-img_res = (384, 768)
-sample_resizer = ImageResizer(img_res)
-label_resizer = ImageResizer(img_res)
+target_sample_res = (384, 768)
+target_label_res = target_sample_res
+if dataset_type == "origres":
+    target_label_res = (112, 224)
+sample_resizer = ImageResizer(target_sample_res, True)
+label_resizer = ImageResizer(target_label_res, True)
 
 clean_dataset_path = data_path.joinpath(f"processed/dataset-20220610-{dataset_type}/")
 if not clean_dataset_path.exists():
@@ -78,7 +90,6 @@ with tqdm(total=total_imgs) as pbar:
             img_left = sample_resizer(raw_left)
             img_right = sample_resizer(raw_right)
             img_label = label_resizer(raw_label)
-            exit()
             # cv2.imwrite(clean_dataset_path.joinpath(f"sl_{ts}.tiff").as_posix(), img_left)
             # cv2.imwrite(clean_dataset_path.joinpath(f"sr_{ts}.tiff").as_posix(), img_right)
             # cv2.imwrite(clean_dataset_path.joinpath(f"dp_{ts}.tiff").as_posix(), img_label)
