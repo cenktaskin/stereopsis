@@ -23,13 +23,13 @@ class NNModel(nn.Module):
 
         self.prediction6 = prediction_layer(c_in=1024)
 
-        self.decoder = nn.ModuleList([
+        self.decoder = [
             decoder_block(c_in=1024, iconv_c_in=1025),
             decoder_block(c_in=512),
             decoder_block(c_in=256),
             decoder_block(c_in=128),
             decoder_block(c_in=64)
-        ])
+        ]
 
     def forward(self, x):
         contracting_x = ()
@@ -99,5 +99,5 @@ if __name__ == "__main__":
     network = NNModel(verbose=True)
     dummy_input = randn((1, 6, *original_res))
     output = network(dummy_input)
-    #for j in network.named_parameters():
+    # for j in network.named_parameters():
     #    print(j[0], j[1].size())
