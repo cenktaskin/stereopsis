@@ -121,7 +121,8 @@ for i in range(epochs):
         optimizer = torch.optim.Adam(model.parameters(), lr=10 ** -4)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
         # save every round
-        torch.save(model.state_dict(), results_path.joinpath(f"model-e{i + 1}.pth"))
+
+torch.save(model.state_dict(), results_path.joinpath(f"model-e{epochs}.pth"))
 
 print("Finished training!")
 print(f"Dumped logs to {results_path}")
