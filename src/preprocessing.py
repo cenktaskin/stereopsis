@@ -56,11 +56,11 @@ class ImageResizer(object):
         return self.resize_img(cropped)
 
 
-dataset_type = "fullres" # fullres or origres
+dataset_type = "fullres"  # fullres or origres
 # after making sure it works, you can turns this into glob
 acquired_datasets = ["202206101932", "202206101937", "202206101612"]
 data_dirs = [data_path.joinpath(f"raw/rawdata-{d}") for d in acquired_datasets]
-
+data_dirs = [data_dirs[1]]
 total_imgs = sum([sum([len(files) for _, _, files in os.walk(i)]) for i in data_dirs]) // 2
 
 target_sample_res = (384, 768)
@@ -74,6 +74,8 @@ clean_dataset_path = data_path.joinpath(f"processed/dataset-20220610-{dataset_ty
 if not clean_dataset_path.exists():
     clean_dataset_path.mkdir()
 
+stats = np.zeros(14)
+flag = True
 with tqdm(total=total_imgs) as pbar:
     for data_dir in data_dirs:
         for img_path in data_dir.glob("st_*.tiff"):
@@ -90,7 +92,15 @@ with tqdm(total=total_imgs) as pbar:
             img_left = sample_resizer(raw_left)
             img_right = sample_resizer(raw_right)
             img_label = label_resizer(raw_label)
-            cv2.imwrite(clean_dataset_path.joinpath(f"sl_{ts}.tiff").as_posix(), img_left)
-            cv2.imwrite(clean_dataset_path.joinpath(f"sr_{ts}.tiff").as_posix(), img_right)
-            cv2.imwrite(clean_dataset_path.joinpath(f"dp_{ts}.tiff").as_posix(), img_label)
+
+            stats += np.concatenate(
+                [np.array(cv2.meanStdDev(img_left)).flatten(),
+                 np.array(cv2.meanStdDev(img_right)).flatten(),
+                 np.array(cv2.meanStdDev(img_label)).flatten()]) / total_imgs
+            # cv2.imwrite(clean_dataset_path.joinpath(f"sl_{ts}.tiff").as_posix(), img_left)
+            # cv2.imwrite(clean_dataset_path.joinpath(f"sr_{ts}.tiff").as_posix(), img_right)
+            # cv2.imwrite(clean_dataset_path.joinpath(f"dp_{ts}.tiff").as_posix(), img_label)
             pbar.update(1)
+
+stats[:-2] /= 255
+np.savetxt(clean_dataset_path.joinpath("stats.txt"), stats)
