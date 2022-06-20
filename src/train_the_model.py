@@ -3,6 +3,7 @@ import pytz
 from tqdm import tqdm
 import importlib
 import numpy as np
+import socket
 
 import torch
 from torch.utils.data import DataLoader
@@ -46,7 +47,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=10 ** -4)  # was 0.05 on ori
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
 
 timestamp = datetime.now().astimezone(pytz.timezone("Europe/Berlin")).strftime("%Y%m%d%H%M")
-results_path = data_path.joinpath(f"runs/{model.name}-train-{timestamp}")
+results_path = data_path.joinpath(f"runs/{model.name}-train-{timestamp}-{socket.gethostname()}")
 writer = SummaryWriter(results_path.joinpath("logs"))
 writer.add_graph(model, next(iter(train_dataloader))[0].to(current_device))
 
