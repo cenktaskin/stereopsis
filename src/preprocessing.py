@@ -75,7 +75,6 @@ if not clean_dataset_path.exists():
     clean_dataset_path.mkdir()
 
 stats = np.zeros(14)
-flag = True
 with tqdm(total=total_imgs) as pbar:
     for data_dir in data_dirs:
         for img_path in data_dir.glob("st_*.tiff"):
