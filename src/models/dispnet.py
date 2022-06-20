@@ -1,4 +1,4 @@
-from torch import nn, cat, load
+from torch import nn, cat
 
 
 class NNModel(nn.Module):
