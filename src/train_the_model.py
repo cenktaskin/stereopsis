@@ -14,7 +14,7 @@ from dispnet_initialize_w import ingest_weights_to_model
 
 
 epochs = 10
-batch_size = 32
+batch_size = 16
 data_split_ratio = 0.99
 batch_norm = True
 pretrained = True
