@@ -2,23 +2,7 @@ import cv2
 import torch
 import torchvision.transforms
 from torch.utils.data import DataLoader
-
-import math
-from dataset import StereopsisDataset, data_path
-import matplotlib.pyplot as plt
-
-def show_comparison_results(imgs, titles, col_count=2):
-    row_count = math.ceil(len(imgs) / col_count)
-    titles = ["original"] + titles
-    for i, img in enumerate(imgs):
-        plt.subplot(row_count, col_count, i + 1)
-        try:
-            plt.title(f"{titles[i]} - max:{img.max():.4f}")
-        except:
-            pass
-        plt.imshow(img, interpolation=None)
-    plt.subplots_adjust(hspace=0.25)
-    plt.show()
+from dataset import StereopsisDataset, data_path, show_images
 
 
 dataset_id = "20220610"
@@ -45,11 +29,11 @@ avg_layers = [torch.nn.AvgPool2d(kernel_size=2 ** (i + 1)) for i in range(scale_
 max_layers = [torch.nn.MaxPool2d(kernel_size=2 ** (i + 1)) for i in range(scale_count)]
 
 to_tens = torchvision.transforms.ToTensor()
-tit = ["bilinear", "nearest-exact"]
+tit = ["original", "bilinear", "nearest-exact"]
 res = []
 for s in avg_layers:
     for img in cv_res:
         res += s(to_tens(img))
         print(res[-1].shape)
 
-show_comparison_results(cv_res + res, tit, col_count=3)
+show_images(cv_res + res, tit, col_count=3)
