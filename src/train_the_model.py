@@ -74,7 +74,6 @@ report += f"Trainable parameter count: {sum(p.numel() for p in model.parameters(
 with open(results_path.joinpath('report.txt'), "w") as f:
     f.write(report)
 each_round = epochs // 4
-print(torch.cuda.memory_summary(device=current_device, abbreviated=False))
 for i in range(epochs):
     with tqdm(total=train_batch_count, unit="batch", leave=False) as pbar:
         pbar.set_description(f"Epoch [{i:4d}/{epochs:4d}]")
