@@ -35,9 +35,10 @@ train_batch_count = len(train_dataloader)
 
 model_type = "dispnet"
 model_net = getattr(importlib.import_module(f"models.{model_type}"), "NNModel")
-model = model_net(batch_norm).to(current_device)
+model = model_net(batch_norm)
 if pretrained:
     ingest_weights_to_model(model)
+model = model.to(current_device)
 
 loss_fn = MultilayerSmoothL1()
 accuracy_fn = MaskedEPE()
