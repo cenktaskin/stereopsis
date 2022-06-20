@@ -2,6 +2,7 @@ from datetime import datetime
 import pytz
 from tqdm import tqdm
 import importlib
+import numpy as np
 
 import torch
 from torch.utils.data import DataLoader
@@ -9,20 +10,21 @@ from torch.utils.tensorboard import SummaryWriter
 
 from dataset import StereopsisDataset, data_path
 from loss import MultilayerSmoothL1, MaskedEPE
-import numpy as np
+from dispnet_initialize_w import ingest_weights_to_model
+
+
+epochs = 10
+batch_size = 32
+data_split_ratio = 0.99
+batch_norm = True
+pretrained = True
 
 dataset_id = "20220610"
 dataset_type = "origres"
 dataset_path = data_path.joinpath(f"processed/dataset-{dataset_id}-{dataset_type}")
 current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-epochs = 5
-batch_size = 32
-data_split_ratio = 0.99
 dataset = StereopsisDataset(dataset_path)
-batch_norm = False
-pretrained = True
-
 train_size = int(data_split_ratio * len(dataset))
 val_size = len(dataset) - train_size
 train_dataset, validation_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
@@ -34,7 +36,8 @@ train_batch_count = len(train_dataloader)
 model_type = "dispnet"
 model_net = getattr(importlib.import_module(f"models.{model_type}"), "NNModel")
 model = model_net(batch_norm).to(current_device)
-model.load_state_dict(torch.load(data_path.joinpath("processed/dispnet_weights.pth")))
+if pretrained:
+    ingest_weights_to_model(model)
 
 loss_fn = MultilayerSmoothL1()
 accuracy_fn = MaskedEPE()
@@ -70,6 +73,7 @@ report += f"Trainable parameter count: {sum(p.numel() for p in model.parameters(
 with open(results_path.joinpath('report.txt'), "w") as f:
     f.write(report)
 each_round = epochs // 4
+print(torch.cuda.memory_summary(device=current_device, abbreviated=False))
 for i in range(epochs):
     with tqdm(total=train_batch_count, unit="batch", leave=False) as pbar:
         pbar.set_description(f"Epoch [{i:4d}/{epochs:4d}]")
