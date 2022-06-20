@@ -17,7 +17,6 @@ class StereopsisDataset(Dataset):
     def __init__(self, img_dir):
         self.img_dir = img_dir
         self.left_stats, self.right_stats, self.label_stats = self.get_input_stats()
-        print(self.left_stats)
         self.left_transform = transforms.Compose([transforms.ToTensor(),
                                                   transforms.Normalize(self.left_stats[:3], self.left_stats[3:])])
         self.right_transform = transforms.Compose([transforms.ToTensor(),
