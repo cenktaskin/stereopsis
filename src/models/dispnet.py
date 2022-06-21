@@ -1,5 +1,5 @@
 from torch import nn, cat, load
-from src.dataset import data_path
+from dataset import data_path
 import pickle
 
 

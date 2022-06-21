@@ -51,7 +51,7 @@ train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size,
 writer = SummaryWriter(results_path.joinpath("logs"))
 
 report = f"""RUN REPORT
-    Model name: {model_name} <br>
+    Model name: {model_name} pretrained:{pretrained} <br>
     Timestamp: {timestamp} <br>
     Run name: {run_name} <br>
     Using {current_device} device <br>
