@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 from dataset import data_path
 from models import dispnet
@@ -45,12 +44,7 @@ def ingest_weights_to_model(net):
 
     for name, param in net.named_parameters():
         old_layer_name = layer_converter.get(name, None)
-        if not old_layer_name:
-            if name.split(".")[-2] == "batch_norm":
-                torch.nn.init.constant_(param.data, int(name.split(".")[-1] == "weight"))
-            else:
-                print(f"Unexpected layer {name}, leaving as it is!")
-        else:
+        if old_layer_name:
             param.data = target_weights[old_layer_name]
 
 
