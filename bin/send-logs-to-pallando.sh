@@ -1,1 +1,1 @@
-rsync -hvPrcz ~/git/stereopsis/data/runs/ ~/pallando/home/stereopsis/data/runs/
+rsync -hvPrcz ~/git/stereopsis/data/logs/ ~/pallando/home/stereopsis/data/logs/

@@ -36,7 +36,7 @@ timestamp = datetime.now().astimezone(pytz.timezone("Europe/Berlin")).strftime("
 run_id = f"{model_name}-{timestamp}-{socket.gethostname()}"
 if run_name:
     run_id += f"-{run_name}"
-results_path = data_path.joinpath(f"runs/{run_id}")
+results_path = data_path.joinpath(f"logs/{run_id}")
 
 dataset_id = "20220610"
 data_split_ratio = 0.99
@@ -48,28 +48,30 @@ train_size = int(data_split_ratio * len(dataset))
 val_size = len(dataset) - train_size
 train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
 
-writer = SummaryWriter(results_path.joinpath("logs"))
+writer = SummaryWriter(results_path)
 
 report = f"""
 ### RUN REPORT
     Timestamp: {timestamp}
     Run name: {run_name}
     Host name: {socket.gethostname()}
-    Using {current_device}
+    Device: {current_device}
     Model name: {model_name}
-    Pretrained:{pretrained}
+    Pretrained: {pretrained}
     Dataset: {dataset_id}-{dataset_type}
-    Samples train:{train_size} validation:{val_size}
+    Train samples: {train_size} 
+    Validation samples: {val_size}
     Epochs: {epochs}
     Batch size: {batch_size}
     Learning rate: {learning_rate}
-    Scheduler step:{scheduler_step} Gamma: {scheduler_gamma}
+    Scheduler step:{scheduler_step} 
+    Scheduler gamma: {scheduler_gamma}
     Loss function: MultiLayerSmoothL1
     Accuracy metric: MaskedEPE
     Optimizer: Adam
 """
 
-print(report.replace("<br>", ""))
+print(report)
 writer.add_text(run_id, report)
 
 model, val_loader = trainer(model_name=model_name, train_dataset=train_dataset,
