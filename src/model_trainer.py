@@ -16,6 +16,7 @@ def model_trainer(model_name, train_dataset, validation_dataset, current_device,
 
     model_net = getattr(import_module(f"models.{model_name}"), "NNModel")
     model = model_net(batch_norm)
+    writer.add_graph(model, torch.randn((1, 6, 384, 768), requires_grad=False))
     if pretrained:
         model.ingest_pretrained_weights()
     model = model.to(current_device)
@@ -24,8 +25,6 @@ def model_trainer(model_name, train_dataset, validation_dataset, current_device,
     accuracy_fn = MaskedEPE()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)  # was 0.05 on original paper but it is exploding
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step, gamma=scheduler_gamma)
-
-    writer.add_graph(model, next(iter(train_dataloader))[0].to(current_device))
 
     # each_round = epochs // 4
     for i in range(epochs):

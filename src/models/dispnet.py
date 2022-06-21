@@ -31,7 +31,6 @@ class NNModel(nn.Module):
 
     def ingest_pretrained_weights(self):
         pretrained_weights = load(data_path.joinpath('raw/dispnet_cvpr2016.pt'))
-
         with open(data_path.joinpath("processed/dispnet_layer_converter.pkl"), "rb") as f:
             layer_converter = pickle.load(f)
 
