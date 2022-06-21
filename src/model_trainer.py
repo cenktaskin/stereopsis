@@ -5,7 +5,6 @@ import torch
 from torch.utils.data import DataLoader
 
 from loss import MultilayerSmoothL1, MaskedEPE
-from dispnet_initialize_w import ingest_weights_to_model
 
 
 def model_trainer(model_name, train_dataset, validation_dataset, current_device, epochs, batch_size, batch_norm,
@@ -18,7 +17,7 @@ def model_trainer(model_name, train_dataset, validation_dataset, current_device,
     model_net = getattr(import_module(f"models.{model_name}"), "NNModel")
     model = model_net(batch_norm)
     if pretrained:
-        ingest_weights_to_model(model)
+        model.ingest_pretrained_weights()
     model = model.to(current_device)
 
     loss_fn = MultilayerSmoothL1()

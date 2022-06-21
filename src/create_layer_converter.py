@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from dataset import data_path
 from models import dispnet
@@ -60,4 +61,4 @@ if __name__ == "__main__":
     # create_txt_to_compare(target_weights, my_model)
     # Close and edit the file, be careful with refiners
     # layer_converter = create_dict()
-    ingest_weights_to_model(my_model)
+

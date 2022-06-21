@@ -1,4 +1,6 @@
-from torch import nn, cat
+from torch import nn, cat, load
+from src.dataset import data_path
+import pickle
 
 
 class NNModel(nn.Module):
@@ -26,6 +28,20 @@ class NNModel(nn.Module):
             DecoderBlock(c_in=128),
             DecoderBlock(c_in=64)
         ])
+
+    def ingest_pretrained_weights(self):
+        pretrained_weights = load(data_path.joinpath('raw/dispnet_cvpr2016.pt'))
+
+        with open(data_path.joinpath("processed/dispnet_layer_converter.pkl"), "rb") as f:
+            layer_converter = pickle.load(f)
+
+        empty_state_dict = self.state_dict()
+        for key in empty_state_dict:
+            old_layer_name = layer_converter.get(key, None)
+            if old_layer_name:
+                empty_state_dict[key] = pretrained_weights[old_layer_name]
+
+        self.load_state_dict(empty_state_dict)
 
     def forward(self, x):
         contracting_x = ()
