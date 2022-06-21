@@ -7,7 +7,7 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from dataset import StereopsisDataset, data_path
-from model_trainer import model_trainer
+from net_trainer import trainer
 
 arg_parser = argparse.ArgumentParser(description="NN Trainer")
 arg_parser.add_argument("-e", "--epochs", type=int, default=10)
@@ -50,29 +50,33 @@ train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size,
 
 writer = SummaryWriter(results_path.joinpath("logs"))
 
-report = f"""RUN REPORT
-    Model name: {model_name} pretrained:{pretrained} <br>
-    Timestamp: {timestamp} <br>
-    Run name: {run_name} <br>
-    Using {current_device} device <br>
-    Dataset: {dataset_id}-{dataset_type} <br>
-    Samples train:{train_size} validation:{val_size} <br>
-    Epochs: {epochs} <br>
-    Batch size: {batch_size} <br>
-    Learning rate: {learning_rate} <br>
-    Scheduler step:{scheduler_step} Gamma: {scheduler_gamma}<br>
-    Loss function: MultiLayerSmoothL1 <br>
-    Accuracy metric: MaskedEPE <br>
-    Optimizer: Adam <br>"""
+report = f"""
+### RUN REPORT
+    Timestamp: {timestamp}
+    Run name: {run_name}
+    Host name: {socket.gethostname()}
+    Using {current_device}
+    Model name: {model_name}
+    Pretrained:{pretrained}
+    Dataset: {dataset_id}-{dataset_type}
+    Samples train:{train_size} validation:{val_size}
+    Epochs: {epochs}
+    Batch size: {batch_size}
+    Learning rate: {learning_rate}
+    Scheduler step:{scheduler_step} Gamma: {scheduler_gamma}
+    Loss function: MultiLayerSmoothL1
+    Accuracy metric: MaskedEPE
+    Optimizer: Adam
+"""
 
 print(report.replace("<br>", ""))
 writer.add_text(run_id, report)
 
-model, val_loader = model_trainer(model_name=model_name, train_dataset=train_dataset,
-                                  validation_dataset=val_dataset, current_device=current_device,
-                                  epochs=epochs, batch_size=batch_size, batch_norm=batch_norm,
-                                  pretrained=pretrained, learning_rate=learning_rate, scheduler_step=scheduler_step,
-                                  scheduler_gamma=scheduler_gamma, writer=writer)
+model, val_loader = trainer(model_name=model_name, train_dataset=train_dataset,
+                            validation_dataset=val_dataset, current_device=current_device,
+                            epochs=epochs, batch_size=batch_size, batch_norm=batch_norm,
+                            pretrained=pretrained, learning_rate=learning_rate, scheduler_step=scheduler_step,
+                            scheduler_gamma=scheduler_gamma, writer=writer)
 
 torch.save(model.state_dict(), results_path.joinpath(f"model-e{epochs}.pth"))
 torch.save(val_loader, results_path.joinpath("val_loader.pt"))

@@ -37,15 +37,18 @@ def create_dict():
         pickle.dump(dct, f)
 
 
-def ingest_weights_to_model(net):
-    target_weights = torch.load(data_path.joinpath('raw/dispnet_cvpr2016.pt'))
+def fetch_pretrained_dispnet_weights(net):
+    pretrained_weights = torch.load(data_path.joinpath('raw/dispnet_cvpr2016.pt'))
     with open(data_path.joinpath("processed/dispnet_layer_converter.pkl"), "rb") as f:
         layer_converter = pickle.load(f)
 
-    for name, param in net.named_parameters():
-        old_layer_name = layer_converter.get(name, None)
+    net_state_dict = net.state_dict()
+    for key in net_state_dict:
+        old_layer_name = layer_converter.get(key, None)
         if old_layer_name:
-            param.data = target_weights[old_layer_name]
+            net_state_dict[key] = pretrained_weights[old_layer_name]
+
+    return net_state_dict
 
 
 if __name__ == "__main__":
@@ -55,4 +58,3 @@ if __name__ == "__main__":
     # create_txt_to_compare(target_weights, my_model)
     # Close and edit the file, be careful with refiners
     # layer_converter = create_dict()
-
