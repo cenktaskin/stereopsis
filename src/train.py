@@ -11,20 +11,20 @@ from model_trainer import model_trainer
 
 arg_parser = argparse.ArgumentParser(description="NN Trainer")
 arg_parser.add_argument("-e", "--epochs", type=int, default=10)
-arg_parser.add_argument("-bs", "--batch_size", type=int, default=16)
-arg_parser.add_argument("-bn", "--batch_norm", type=bool, default=True)
-arg_parser.add_argument("-pre", "--pretrained", type=bool, default=True)
-arg_parser.add_argument("-lr", "--learning_rate", type=float, default=10 ** -4)
-arg_parser.add_argument("-dt", "--dataset_type", type=str, default="fullres")
+arg_parser.add_argument("-bs", "--batch-size", type=int, default=16)
+arg_parser.add_argument("-bn", "--batch-norm", type=bool, default=True)
+arg_parser.add_argument("-npre", "--not-pretrained", action='store_true', default=False)
+arg_parser.add_argument("-lr", "--learning-rate", type=float, default=10 ** -4)
+arg_parser.add_argument("-dt", "--dataset-type", type=str, default="fullres")
 arg_parser.add_argument("-schg", "--scheduler-gamma", type=float, default=0.5)
 arg_parser.add_argument("-schs", "--scheduler-step", type=int, default=10)
-arg_parser.add_argument("-n", "--run_name", type=str, default=None)
+arg_parser.add_argument("-n", "--run-name", type=str, default=None)
 args = arg_parser.parse_args()
 
 epochs = args.epochs
 batch_size = args.batch_size
 batch_norm = args.batch_norm
-pretrained = args.pretrained
+pretrained = not args.not_pretrained
 learning_rate = args.learning_rate
 dataset_type = args.dataset_type
 scheduler_step = args.scheduler_step
