@@ -13,19 +13,18 @@ class MultilayerSmoothL1(torch.nn.Module):
                                   [0.0, 0.0, 0.5, 1.0, 0.2, 0.0],
                                   [0.0, 0.0, 0.0, 0.5, 1.0, 0.2],
                                   [0.0, 0.0, 0.0, 0.0, 0.5, 1.0],
-                                  [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]])
+                                  [0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+                                  [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]]) # last line is added by me
 
-    breakpoints = torch.tensor([50 * 10 ** 3, 0.1 * 10 ** 6, 0.15 * 10 ** 6,
-                                0.25 * 10 ** 6, 0.35 * 10 ** 6, 0.45 * 10 ** 6]) / 30  # divided by 30 for fastness
 
     def __init__(self):
         super().__init__()
         self.smoothl1 = torch.nn.SmoothL1Loss()
 
-    def forward(self, preds, y, iteration_idx):
+    def forward(self, preds, y, round):
         y = assert_label_dims(y)
 
-        current_weights = self.loss_schedule[(iteration_idx > self.breakpoints).sum()]
+        current_weights = self.loss_schedule[round]
 
         loss = 0.0
         for i in current_weights.nonzero():
@@ -46,7 +45,7 @@ class MaskedEPE(torch.nn.Module):
     def forward(self, preds, y):
         y = assert_label_dims(y)
         full_res_pred = preds[-1]
-        upsampled_pred = interpolate(full_res_pred, size=y.shape[-2:], mode="area")
+        upsampled_pred = interpolate(full_res_pred, size=y.shape[-2:], mode="bilinear")
         upsampled_pred[y == 0] = 0  # mask the 0.0 elements
         return torch.sqrt(self.mse(upsampled_pred, y))
 

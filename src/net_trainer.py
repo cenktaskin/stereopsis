@@ -1,3 +1,4 @@
+from pathlib import Path
 from tqdm import tqdm
 from importlib import import_module
 
@@ -15,6 +16,9 @@ def trainer(model_name, train_dataset, validation_dataset, current_device, epoch
     train_batch_count = len(train_dataloader)
     val_batch_count = len(val_dataloader)
 
+    results_path = Path(writer.log_dir)
+    torch.save(val_dataloader, results_path.joinpath("val_loader.pt"))
+
     model_net = getattr(import_module(f"models.{model_name}"), "NNModel")
     model = model_net(batch_norm)
     writer.add_graph(model, torch.randn((1, 6, 384, 768), requires_grad=False))
@@ -24,10 +28,10 @@ def trainer(model_name, train_dataset, validation_dataset, current_device, epoch
 
     loss_fn = MultilayerSmoothL1()
     accuracy_fn = MaskedEPE()
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)  # was 0.05 on original paper but it is exploding
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step, gamma=scheduler_gamma)
 
-    # each_round = epochs // 4
+    each_round = 10
     for i in range(epochs):
         with tqdm(total=train_batch_count, unit="batch", leave=False) as pbar:
             pbar.set_description(f"Epoch [{i:4d}/{epochs:4d}]")
@@ -40,7 +44,7 @@ def trainer(model_name, train_dataset, validation_dataset, current_device, epoch
 
                 x, y = x.to(current_device), y.to(current_device)
                 predictions = model(x)
-                loss = loss_fn(predictions, y, batch_idx)
+                loss = loss_fn(predictions, y, i//each_round)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -60,7 +64,7 @@ def trainer(model_name, train_dataset, validation_dataset, current_device, epoch
                 for k, (x, y) in enumerate(val_dataloader):
                     x, y = x.to(current_device), y.to(current_device)
                     predictions = model(x)
-                    running_val_loss += loss_fn(predictions, y, 10 ** 10).item()
+                    running_val_loss += loss_fn(predictions, y, 7).item()
                     running_val_epe += accuracy_fn(predictions, y).item()
 
             avg_train_epe = running_train_epe / train_batch_count
@@ -73,9 +77,7 @@ def trainer(model_name, train_dataset, validation_dataset, current_device, epoch
             writer.add_scalars('Error/epoch', {'Training': avg_train_epe, 'Validation': avg_val_epe}, i)
             writer.flush()
 
-        # if i % each_round == each_round - 1:
-        #    optimizer = torch.optim.Adam(model.parameters(), lr=10 ** -4)
-        #    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
-        # save every round
-
-    return model, val_dataloader
+        if i % (2*each_round) == (2*each_round) - 1:
+            optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step, gamma=scheduler_gamma)
+            torch.save(model.state_dict(), results_path.joinpath(f"model-e{i+1}.pt"))

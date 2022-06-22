@@ -77,14 +77,10 @@ print(report)
 writer.add_text(run_id, report)
 writer.flush()
 
-model, val_loader = trainer(model_name=model_name, train_dataset=train_dataset,
-                            validation_dataset=val_dataset, current_device=current_device,
-                            epochs=epochs, batch_size=batch_size, batch_norm=batch_norm,
-                            pretrained=pretrained, learning_rate=learning_rate, scheduler_step=scheduler_step,
-                            scheduler_gamma=scheduler_gamma, writer=writer)
-
-torch.save(model.state_dict(), results_path.joinpath(f"model-e{epochs}.pth"))
-torch.save(val_loader, results_path.joinpath("val_loader.pt"))
+trainer(model_name=model_name, train_dataset=train_dataset, validation_dataset=val_dataset,
+        current_device=current_device, epochs=epochs, batch_size=batch_size, batch_norm=batch_norm,
+        pretrained=pretrained, learning_rate=learning_rate, scheduler_step=scheduler_step,
+        scheduler_gamma=scheduler_gamma, writer=writer)
 
 print("Finished training!")
 print(f"Dumped logs to {results_path}")
