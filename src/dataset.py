@@ -43,19 +43,26 @@ def imshow(inp, title=None):
     plt.pause(0.01)  # pause a bit so that plots are updated
 
 
-def show_images(imgs, titles, row_count=1, col_count=None):
+def show_images(imgs, titles=(), row_count=1, col_count=None):
     if not col_count:
         col_count = math.ceil(len(imgs) / row_count)
+    fig, axs = plt.subplots(row_count, col_count)
+    mng = plt.get_current_fig_manager()
     for i, img in enumerate(imgs):
-        plt.subplot(row_count, col_count, i + 1)
+        ax = axs[i // col_count, i % col_count]
+        if torch.is_tensor(img):
+            img = img.numpy()
+        if len(img) < 10:
+            img = img.transpose((1, 2, 0))
         try:
-            plt.title(f"{titles[i]} - max:{img.max():.4f}")
+            plt.title(f"{titles[i]}")
         except:
             pass
-        if isinstance(img, torch.Tensor) and len(img.shape)>2:
-            img = img.permute(1, 2, 0)
-        plt.imshow(img, interpolation=None)
-    plt.show()
+        ax.imshow(img, interpolation=None)
+    mng.resize(*mng.window.maxsize())
+    fig.show()
+    plt.waitforbuttonpress()
+    plt.close(fig)
 
 
 if __name__ == "__main__":
