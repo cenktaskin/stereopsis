@@ -61,7 +61,7 @@ def trainer(model_name, train_dataset, validation_dataset, loss_fn, accuracy_fn,
                 for k, (x, y) in enumerate(val_dataloader):
                     x, y = x.to(current_device).float(), y.to(current_device).float()
                     predictions = model(x)
-                    running_val_loss += loss_fn(predictions, y, stage=4).item()
+                    running_val_loss += loss_fn(predictions, y, stage=3).item()
                     running_val_epe += accuracy_fn(predictions, y).item()
 
             avg_train_epe = running_train_epe / train_batch_count

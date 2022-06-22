@@ -16,6 +16,8 @@ class MultilayerSmoothL1(torch.nn.Module):
         self.smoothl1 = torch.nn.SmoothL1Loss()
 
     def forward(self, predictions, label, stage):
+        if stage > 3:
+            stage = 3
         label = assert_label_dims(label)
         loss = 0
         for i in self.weights[stage].nonzero():
