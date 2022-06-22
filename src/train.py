@@ -17,6 +17,7 @@ def generate_report():
     Run name: {args.run_name}
     Host name: {socket.gethostname()}
     Device: {current_device}
+    Num_workers: {args.num_workers}
     Model name: {model_name}
     Pretrained: {not args.not_pretrained}
     Dataset: {dataset_id}-{args.dataset_type}
