@@ -9,10 +9,10 @@ from loss import MultilayerSmoothL1, MaskedEPE
 from pretrained_weights import fetch_pretrained_dispnet_weights
 
 
-def trainer(model_name, train_dataset, validation_dataset, current_device, epochs, batch_size, batch_norm,
-            pretrained, learning_rate, scheduler_step, scheduler_gamma, writer):
-    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=3)
-    val_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True, num_workers=3)
+def trainer(model_name, train_dataset, validation_dataset, current_device, writer, epochs, batch_size, batch_norm,
+            not_pretrained, learning_rate, scheduler_step, scheduler_gamma, num_workers):
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    val_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
     train_batch_count = len(train_dataloader)
     val_batch_count = len(val_dataloader)
 
@@ -22,7 +22,7 @@ def trainer(model_name, train_dataset, validation_dataset, current_device, epoch
     model_net = getattr(import_module(f"models.{model_name}"), "NNModel")
     model = model_net(batch_norm)
     writer.add_graph(model, torch.randn((1, 6, 384, 768), requires_grad=False))
-    if pretrained:
+    if not not_pretrained:
         model.load_state_dict(fetch_pretrained_dispnet_weights(model))
     model = model.to(current_device)
 
@@ -42,7 +42,7 @@ def trainer(model_name, train_dataset, validation_dataset, current_device, epoch
             for j, (x, y) in enumerate(train_dataloader):
                 batch_idx = i * len(train_dataloader) + j + 1
 
-                x, y = x.to(current_device), y.to(current_device)
+                x, y = x.to(current_device).float(), y.to(current_device).float()
                 predictions = model(x)
                 loss = loss_fn(predictions, y, i//each_round)
                 optimizer.zero_grad()
@@ -62,7 +62,7 @@ def trainer(model_name, train_dataset, validation_dataset, current_device, epoch
             running_val_epe, running_val_loss = 0, 0
             with torch.no_grad():
                 for k, (x, y) in enumerate(val_dataloader):
-                    x, y = x.to(current_device), y.to(current_device)
+                    x, y = x.to(current_device).float(), y.to(current_device).float()
                     predictions = model(x)
                     running_val_loss += loss_fn(predictions, y, 7).item()
                     running_val_epe += accuracy_fn(predictions, y).item()
@@ -77,7 +77,7 @@ def trainer(model_name, train_dataset, validation_dataset, current_device, epoch
             writer.add_scalars('Error/epoch', {'Training': avg_train_epe, 'Validation': avg_val_epe}, i)
             writer.flush()
 
-        if i % (2*each_round) == (2*each_round) - 1:
+        if i % (2 * each_round) == (2 * each_round) - 1:
             optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
             scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step, gamma=scheduler_gamma)
-            torch.save(model.state_dict(), results_path.joinpath(f"model-e{i+1}.pt"))
+            torch.save(model.state_dict(), results_path.joinpath(f"model-e{i + 1}.pt"))

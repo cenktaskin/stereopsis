@@ -2,6 +2,7 @@ import argparse
 import pytz
 import socket
 from datetime import datetime
+import time
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -74,10 +75,10 @@ report = generate_report()
 writer.add_text(run_id, report)
 writer.flush()
 print(report)
-
+start_time = time.time()
 del args.dataset_type, args.run_name, args.subsample
 trainer(model_name=model_name, train_dataset=train_dataset, validation_dataset=val_dataset,
         current_device=current_device, writer=writer, **vars(args))
 
-print("Finished training!")
+print(f"Finished training in {time.time()-start_time}!")
 print(f"Dumped logs to {results_path}")
