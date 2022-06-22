@@ -28,7 +28,7 @@ class MultilayerSmoothL1(torch.nn.Module):
 
 
 class MultilayerSmoothL1viaPool(torch.nn.Module):
-    name = "MultilayerSmoothL1"
+    name = "MultilayerSmoothL1viaPool"
     # cols are for each loss layer from 6 to 0
     # last line is added by me
     weights = torch.tensor([[1.0, 1.0, 0.5, 0.0, 0.0, 0.0],
