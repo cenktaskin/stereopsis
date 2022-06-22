@@ -3,11 +3,8 @@ import math
 
 import numpy as np
 import matplotlib.pyplot as plt
-from PIL import Image
-
-import torch
 from torch.utils.data import DataLoader, Dataset
-from torchvision import transforms
+from cv2 import cv2
 
 project_path = Path(__file__).joinpath("../..").resolve()
 data_path = project_path.joinpath('data')
@@ -16,37 +13,20 @@ data_path = project_path.joinpath('data')
 class StereopsisDataset(Dataset):
     def __init__(self, img_dir):
         self.img_dir = img_dir
-        self.left_stats, self.right_stats, self.label_stats = self.get_input_stats()
-        self.left_transform = transforms.Compose([transforms.ToTensor(),
-                                                  transforms.Normalize(self.left_stats[:3], self.left_stats[3:])])
-        self.right_transform = transforms.Compose([transforms.ToTensor(),
-                                                   transforms.Normalize(self.right_stats[:3], self.right_stats[3:])])
-        self.target_transform = transforms.Compose([transforms.ToTensor(),
-                                                    transforms.Normalize(self.label_stats[0], self.label_stats[1])])
         self.timestamp_list = np.array(sorted([int(x.stem[3:]) for x in self.img_dir.glob("sl*")]))
 
     def __len__(self):
         return len(list(self.img_dir.glob("sl*")))
-
-    def get_input_stats(self):
-        stats = np.loadtxt(self.img_dir.joinpath("stats.txt"))
-        return stats[:6], stats[6:-2], stats[-2:]
 
     def ts_to_index(self, ts):
         return np.where(np.equal(self.timestamp_list, ts))[0][0]
 
     def __getitem__(self, idx):
         ts = self.timestamp_list[idx]
-        image_l = Image.open(self.img_dir.joinpath(f"sl_{ts}.tiff").as_posix())
-        image_r = Image.open(self.img_dir.joinpath(f"sr_{ts}.tiff").as_posix())
-        label = Image.open(self.img_dir.joinpath(f"dp_{ts}.tiff").as_posix())
-        if self.left_transform:
-            image_l = self.left_transform(image_l)
-        if self.right_transform:
-            image_r = self.right_transform(image_r)
-        if self.target_transform:
-            label = self.target_transform(label)
-        return torch.cat([image_l, image_r]), label
+        image_l = cv2.cvtColor(cv2.imread(self.img_dir.joinpath(f"sl_{ts}.tiff").as_posix()), cv2.COLOR_BGR2RGB)
+        image_r = cv2.cvtColor(cv2.imread(self.img_dir.joinpath(f"sr_{ts}.tiff").as_posix()), cv2.COLOR_BGR2RGB)
+        label = cv2.imread(self.img_dir.joinpath(f"dp_{ts}.tiff").as_posix(), flags=cv2.IMREAD_UNCHANGED)
+        return np.concatenate([image_l, image_r], axis=2).transpose((2, 0, 1)), label
 
 
 def imshow(inp, title=None):
