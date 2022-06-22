@@ -29,7 +29,7 @@ def generate_report():
     Scheduler step: {args.scheduler_step} 
     Scheduler gamma: {args.scheduler_gamma}
     Loss function: MultiLayerSmoothL1
-    Accuracy metric: MaskedEPE
+    Accuracy metric: EPE
     Optimizer: Adam
 """
 
