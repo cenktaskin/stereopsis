@@ -3,6 +3,7 @@ import math
 
 import numpy as np
 import matplotlib.pyplot as plt
+import torch
 from torch.utils.data import DataLoader, Dataset
 from cv2 import cv2
 
@@ -42,7 +43,7 @@ def imshow(inp, title=None):
     plt.pause(0.01)  # pause a bit so that plots are updated
 
 
-def show_images(imgs, titles, tensor=True, row_count=1, col_count=None):
+def show_images(imgs, titles, row_count=1, col_count=None):
     if not col_count:
         col_count = math.ceil(len(imgs) / row_count)
     for i, img in enumerate(imgs):
@@ -51,7 +52,7 @@ def show_images(imgs, titles, tensor=True, row_count=1, col_count=None):
             plt.title(f"{titles[i]} - max:{img.max():.4f}")
         except:
             pass
-        if tensor:
+        if isinstance(img, torch.Tensor) and len(img.shape)>2:
             img = img.permute(1, 2, 0)
         plt.imshow(img, interpolation=None)
     plt.show()
