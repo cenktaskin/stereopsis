@@ -20,11 +20,9 @@ class MultilayerSmoothL1(torch.nn.Module):
         super().__init__()
         self.smoothl1 = torch.nn.SmoothL1Loss()
 
-    def forward(self, preds, y, round):
+    def forward(self, preds, y, stage):
         y = assert_label_dims(y)
-
-        current_weights = self.loss_schedule[round]
-
+        current_weights = self.loss_schedule[stage]
         loss = 0.0
         for i in current_weights.nonzero():
             upsampled_pred = interpolate(preds[i], size=y.shape[-2:], mode="bilinear")

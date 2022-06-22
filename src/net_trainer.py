@@ -31,7 +31,7 @@ def trainer(model_name, train_dataset, validation_dataset, current_device, write
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step, gamma=scheduler_gamma)
 
-    each_round = 10
+    each_round = epochs // 8
     for i in range(epochs):
         with tqdm(total=train_batch_count, unit="batch", leave=False) as pbar:
             pbar.set_description(f"Epoch [{i:4d}/{epochs:4d}]")
@@ -44,7 +44,7 @@ def trainer(model_name, train_dataset, validation_dataset, current_device, write
 
                 x, y = x.to(current_device).float(), y.to(current_device).float()
                 predictions = model(x)
-                loss = loss_fn(predictions, y, i//each_round)
+                loss = loss_fn(predictions, y, i // each_round)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -64,7 +64,7 @@ def trainer(model_name, train_dataset, validation_dataset, current_device, write
                 for k, (x, y) in enumerate(val_dataloader):
                     x, y = x.to(current_device).float(), y.to(current_device).float()
                     predictions = model(x)
-                    running_val_loss += loss_fn(predictions, y, 7).item()
+                    running_val_loss += loss_fn(predictions, y, stage=7).item()
                     running_val_epe += accuracy_fn(predictions, y).item()
 
             avg_train_epe = running_train_epe / train_batch_count
