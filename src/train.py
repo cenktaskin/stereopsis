@@ -19,6 +19,7 @@ arg_parser.add_argument("-dt", "--dataset-type", type=str, default="fullres")
 arg_parser.add_argument("-schg", "--scheduler-gamma", type=float, default=0.5)
 arg_parser.add_argument("-schs", "--scheduler-step", type=int, default=10)
 arg_parser.add_argument("-n", "--run-name", type=str, default=None)
+arg_parser.add_argument("-sub", "--subsample", type=int, default=False)
 args = arg_parser.parse_args()
 
 epochs = args.epochs
@@ -30,6 +31,7 @@ dataset_type = args.dataset_type
 scheduler_step = args.scheduler_step
 scheduler_gamma = args.scheduler_gamma
 run_name = args.run_name
+subsample = args.subsample
 
 model_name = "dispnet"
 timestamp = datetime.now().astimezone(pytz.timezone("Europe/Berlin")).strftime("%Y%m%d%H%M")
@@ -44,8 +46,9 @@ dataset_path = data_path.joinpath(f"processed/dataset-{dataset_id}-{dataset_type
 current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 dataset = StereopsisDataset(dataset_path)
-# active_samples = 1000 #  to activate less part of it
-# dataset, _ = torch.utils.data.random_split(dataset, [active_samples, len(dataset)-active_samples])
+if subsample:
+    active_samples = 1000
+    dataset, _ = torch.utils.data.random_split(dataset, [active_samples, len(dataset)-active_samples])
 train_size = int(data_split_ratio * len(dataset))
 val_size = len(dataset) - train_size
 train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
