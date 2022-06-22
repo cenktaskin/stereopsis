@@ -45,6 +45,8 @@ class MultilayerSmoothL1viaPool(torch.nn.Module):
         self.multiScales = [torch.nn.AvgPool2d(kernel_size=2 ** i) for i in range(6, 0, -1)]
 
     def forward(self, predictions, label, stage):
+        if stage > 3:
+            stage = 3
         label = assert_label_dims(label)
         loss = 0
         for i in self.weights[stage].nonzero():
