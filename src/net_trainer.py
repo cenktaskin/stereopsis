@@ -26,13 +26,13 @@ def trainer(model_name, train_dataset, validation_dataset, current_device, write
         model.load_state_dict(fetch_pretrained_dispnet_weights(model))
     model = model.to(current_device)
 
-    loss_fns = [MultilayerSmoothL1viaPool, MultilayerSmoothL1]
+    loss_fns = [MultilayerSmoothL1viaPool(), MultilayerSmoothL1()]
     loss_fn = loss_fns[0]
     accuracy_fn = MaskedEPE()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step, gamma=scheduler_gamma)
 
-    each_round = epochs // 8
+    each_round = epochs // 4
     for i in range(epochs):
         with tqdm(total=train_batch_count, unit="batch", leave=False) as pbar:
             pbar.set_description(f"Epoch [{i:4d}/{epochs:4d}]")
@@ -65,7 +65,7 @@ def trainer(model_name, train_dataset, validation_dataset, current_device, write
                 for k, (x, y) in enumerate(val_dataloader):
                     x, y = x.to(current_device).float(), y.to(current_device).float()
                     predictions = model(x)
-                    running_val_loss += loss_fn(predictions, y, stage=7).item()
+                    running_val_loss += loss_fn(predictions, y, stage=4).item()
                     running_val_epe += accuracy_fn(predictions, y).item()
 
             avg_train_epe = running_train_epe / train_batch_count
@@ -78,7 +78,8 @@ def trainer(model_name, train_dataset, validation_dataset, current_device, write
             writer.add_scalars('Error/epoch', {'Training': avg_train_epe, 'Validation': avg_val_epe}, i)
             writer.flush()
 
-        if i % (2 * each_round) == (2 * each_round) - 1:
+        if i % each_round == each_round- 1:
             optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
             scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step, gamma=scheduler_gamma)
-            torch.save(model.state_dict(), results_path.joinpath(f"model-e{i + 1}.pt"))
+
+    torch.save(model.state_dict(), results_path.joinpath(f"model-e{epochs}.pt"))
