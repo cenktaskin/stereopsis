@@ -14,8 +14,7 @@ class MultilayerSmoothL1(torch.nn.Module):
                                   [0.0, 0.0, 0.0, 0.5, 1.0, 0.2],
                                   [0.0, 0.0, 0.0, 0.0, 0.5, 1.0],
                                   [0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
-                                  [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]]) # last line is added by me
-
+                                  [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]], requires_grad=False)  # last line is added by me
 
     def __init__(self):
         super().__init__()
