@@ -4,7 +4,7 @@ from torch import nn, cat
 class NNModel(nn.Module):
     name = 'dispnet'
 
-    def __init__(self, batch_norm=False, verbose=False):
+    def __init__(self, batch_norm=True, verbose=False):
         super(NNModel, self).__init__()
         self.verbose = verbose
 

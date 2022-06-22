@@ -27,6 +27,7 @@ def generate_report():
     Validation samples: {val_size}
     Epochs: {args.epochs}
     Batch size: {args.batch_size}
+    Batch norm: {args.batch_norm}
     Learning rate: {args.learning_rate}
     Scheduler step: {args.scheduler_step} 
     Scheduler gamma: {args.scheduler_gamma}
