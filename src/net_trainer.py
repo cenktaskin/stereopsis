@@ -5,12 +5,11 @@ from importlib import import_module
 import torch
 from torch.utils.data import DataLoader
 
-from loss import MultilayerSmoothL1, MaskedEPE, MultilayerSmoothL1viaPool
 from pretrained_weights import fetch_pretrained_dispnet_weights
 
 
-def trainer(model_name, train_dataset, validation_dataset, current_device, writer, epochs, batch_size, batch_norm,
-            not_pretrained, learning_rate, scheduler_step, scheduler_gamma, num_workers):
+def trainer(model_name, train_dataset, validation_dataset, loss_fn, accuracy_fn, current_device, writer, epochs,
+            batch_size, batch_norm, not_pretrained, learning_rate, scheduler_step, scheduler_gamma, num_workers, ):
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
     val_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
     train_batch_count = len(train_dataloader)
@@ -26,9 +25,6 @@ def trainer(model_name, train_dataset, validation_dataset, current_device, write
         model.load_state_dict(fetch_pretrained_dispnet_weights(model))
     model = model.to(current_device)
 
-    loss_fns = [MultilayerSmoothL1viaPool(), MultilayerSmoothL1()]
-    loss_fn = loss_fns[0]
-    accuracy_fn = MaskedEPE()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step, gamma=scheduler_gamma)
 
@@ -78,7 +74,7 @@ def trainer(model_name, train_dataset, validation_dataset, current_device, write
             writer.add_scalars('Error/epoch', {'Training': avg_train_epe, 'Validation': avg_val_epe}, i)
             writer.flush()
 
-        if i % each_round == each_round- 1:
+        if i % each_round == each_round - 1:
             optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
             scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step, gamma=scheduler_gamma)
 

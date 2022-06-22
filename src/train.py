@@ -7,6 +7,7 @@ import time
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
+from loss import MultilayerSmoothL1, MultilayerSmoothL1viaPool, MaskedEPE
 from dataset import StereopsisDataset, data_path
 from net_trainer import trainer
 
@@ -29,8 +30,8 @@ def generate_report():
     Learning rate: {args.learning_rate}
     Scheduler step: {args.scheduler_step} 
     Scheduler gamma: {args.scheduler_gamma}
-    Loss function: MultiLayerSmoothL1
-    Accuracy metric: EPE
+    Loss function: {loss_fn.name}
+    Accuracy metric: {accuracy_fn.name}
     Optimizer: Adam
 """
 
@@ -47,6 +48,7 @@ arg_parser.add_argument("-nw", "--num-workers", type=int, default=4)
 arg_parser.add_argument("-dt", "--dataset-type", type=str, default="fullres")
 arg_parser.add_argument("-n", "--run-name", type=str, default=None)
 arg_parser.add_argument("-sub", "--subsample", type=int, default=False)
+arg_parser.add_argument("-lf", "--loss-func-idx", type=int, default=1)
 args = arg_parser.parse_args()
 
 model_name = "dispnet"
@@ -69,6 +71,10 @@ train_size = int(data_split_ratio * len(dataset))
 val_size = len(dataset) - train_size
 train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
 
+loss_fns = [MultilayerSmoothL1(), MultilayerSmoothL1viaPool()]
+loss_fn = loss_fns[args.loss_func_idx]
+accuracy_fn = MaskedEPE()
+
 writer = SummaryWriter(results_path)
 
 report = generate_report()
@@ -76,7 +82,7 @@ writer.add_text(run_id, report)
 writer.flush()
 print(report)
 start_time = time.time()
-del args.dataset_type, args.run_name, args.subsample
+del args.dataset_type, args.run_name, args.subsample, args.loss_func_idx
 
 trainer(model_name=model_name, train_dataset=train_dataset, validation_dataset=val_dataset,
         current_device=current_device, writer=writer, **vars(args))
