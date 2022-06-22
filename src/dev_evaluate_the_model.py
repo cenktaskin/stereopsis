@@ -1,50 +1,34 @@
-import importlib
-
 import torch
-from torch.utils.data import DataLoader
-
-from dataset import StereopsisDataset, data_path, imshow, plot_res
+from models import dispnet
+from dataset import data_path, StereopsisDataset, show_images
 import numpy as np
-import matplotlib.pyplot as plt
+from loss import MaskedEPE
 
-dataset_id = "20220610"
-dataset_path = data_path.joinpath(f"raw/dataset-{dataset_id}")
 current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-batch_size = 8
-data_split_ratio = 0.98
+run_name = "dispnet-202206222310-namo-LossFComparisonOldOne"
+log_path = data_path.joinpath(f"logs/{run_name}")
+
+val_loader = torch.load(log_path.joinpath("val_loader.pt"))
+#val_loader_idx = np.loadtxt(log_path.joinpath("validation_indices.txt")).astype(int)
+
+dataset_path = data_path.joinpath(f"processed/dataset-20220610-origres")
 dataset = StereopsisDataset(dataset_path)
-dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
 
-model_type = "dispnet"
-model_net = getattr(importlib.import_module(f"models.{model_type}"), "NNModel")
-model = model_net().to(current_device)
-model.load_state_dict(torch.load("dispnet_weights.pth"))
+model_weights = torch.load(next(log_path.glob("model*")), map_location=current_device)
+model = dispnet.NNModel(batch_norm=True)
+model.load_state_dict(model_weights)
+
+acc_fn = MaskedEPE()
 model.eval()
-
-train_features, train_labels = next(iter(dataloader))
-train_features = train_features.to(current_device)
-train_labels = train_labels.to(current_device)
-
 with torch.no_grad():
-    predictions = model(train_features)
+    for idx in val_loader.dataset.indices:
+    #for idx in val_loader_idx:
+        x, y = dataset.__getitem__(idx-10)
+        x_tensor = torch.from_numpy(x).unsqueeze(dim=0).float()
+        y_hats = model(x_tensor)
+        pred = y_hats[-1].squeeze()
+        print(acc_fn(y_hats,torch.from_numpy(y).unsqueeze(dim=0).float()))
+        tit = ["left_img", "right_img", "label", "pred"]
+        show_images([*np.split(x.squeeze(), 2, axis=0), y, pred], titles=tit, row_count=2)
 
-for i in range(len(train_features)):
-    x_l, x_r = np.split(train_features[i].squeeze(), 2, axis=0)
-    y = train_labels[i]
-    y_hats = [p[i].squeeze().cpu() for p in predictions]
-
-    plot_res([x_l.cpu(), x_r.cpu(), y.cpu()]+y_hats)
-    exit()
-
-    plt.subplot(2, 2, 1)
-    imshow(x_l.cpu())  # back to np dimension order
-    plt.subplot(2, 2, 2)
-    imshow(x_r.cpu())
-    plt.subplot(2, 2, 3)
-    plt.title(f"Training sample with type {type(y)}, shape {y.shape}")
-    plt.imshow(y.cpu())
-    plt.subplot(2, 2, 4)
-    plt.imshow(y_hat.cpu())
-    plt.show()
-    break
