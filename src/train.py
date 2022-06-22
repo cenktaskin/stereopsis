@@ -44,6 +44,8 @@ dataset_path = data_path.joinpath(f"processed/dataset-{dataset_id}-{dataset_type
 current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 dataset = StereopsisDataset(dataset_path)
+# active_samples = 1000#  to activate less part of it
+# dataset, _ = torch.utils.data.random_split(dataset, [active_samples, len(dataset)-active_samples])
 train_size = int(data_split_ratio * len(dataset))
 val_size = len(dataset) - train_size
 train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
@@ -73,6 +75,7 @@ report = f"""
 
 print(report)
 writer.add_text(run_id, report)
+writer.flush()
 
 model, val_loader = trainer(model_name=model_name, train_dataset=train_dataset,
                             validation_dataset=val_dataset, current_device=current_device,

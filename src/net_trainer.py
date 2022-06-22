@@ -5,13 +5,13 @@ import torch
 from torch.utils.data import DataLoader
 
 from loss import MultilayerSmoothL1, MaskedEPE
-from transfer_learning import fetch_pretrained_dispnet_weights
+from pretrained_weights import fetch_pretrained_dispnet_weights
 
 
 def trainer(model_name, train_dataset, validation_dataset, current_device, epochs, batch_size, batch_norm,
             pretrained, learning_rate, scheduler_step, scheduler_gamma, writer):
-    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-    val_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=3)
+    val_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True, num_workers=3)
     train_batch_count = len(train_dataloader)
     val_batch_count = len(val_dataloader)
 
@@ -19,12 +19,9 @@ def trainer(model_name, train_dataset, validation_dataset, current_device, epoch
     model = model_net(batch_norm)
     writer.add_graph(model, torch.randn((1, 6, 384, 768), requires_grad=False))
     if pretrained:
-        a = fetch_pretrained_dispnet_weights(model)
-        print(a["decoder.4.merger.bias"])
-        model.load_state_dict(a)
+        model.load_state_dict(fetch_pretrained_dispnet_weights(model))
     model = model.to(current_device)
-    print(model.state_dict()['decoder.4.merger.bias'])
-    exit()
+
     loss_fn = MultilayerSmoothL1()
     accuracy_fn = MaskedEPE()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)  # was 0.05 on original paper but it is exploding
@@ -52,12 +49,11 @@ def trainer(model_name, train_dataset, validation_dataset, current_device, epoch
                 running_train_loss += train_loss
                 running_train_epe += accuracy_fn(predictions, y).item()
 
-                writer.add_scalar("Running loss/iteration", train_loss, batch_idx)
+                writer.add_scalar("RunningLoss/iteration", train_loss, batch_idx)
                 pbar.set_postfix(loss=f"{train_loss:.4f}")
                 pbar.update(True)
 
             scheduler.step()
-
             model.eval()
             running_val_epe, running_val_loss = 0, 0
             with torch.no_grad():
@@ -74,7 +70,7 @@ def trainer(model_name, train_dataset, validation_dataset, current_device, epoch
             avg_val_loss = running_val_loss / val_batch_count
 
             writer.add_scalars('Loss/epoch', {'Training': avg_train_loss, 'Validation': avg_val_loss}, i)
-            writer.add_scalars('Accuracy/epoch', {'Training': avg_train_epe, 'Validation': avg_val_epe}, i)
+            writer.add_scalars('Error/epoch', {'Training': avg_train_epe, 'Validation': avg_val_epe}, i)
             writer.flush()
 
         # if i % each_round == each_round - 1:
