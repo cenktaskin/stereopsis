@@ -65,7 +65,7 @@ current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 dataset = StereopsisDataset(dataset_path)
 if args.subsample:
-    active_samples = 1000
+    active_samples = args.subsample
     dataset, _ = torch.utils.data.random_split(dataset, [active_samples, len(dataset) - active_samples])
 train_size = int(data_split_ratio * len(dataset))
 val_size = len(dataset) - train_size

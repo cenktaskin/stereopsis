@@ -22,7 +22,8 @@ class MultilayerSmoothL1(torch.nn.Module):
             upsampled_prediction = interpolate(predictions[i], size=label.shape[-2:], mode="bilinear")
             valid_pixels = label > 0
             valid_pixels.detach_()
-            loss += self.smoothl1(upsampled_prediction[valid_pixels], label[valid_pixels]) * self.weights[stage][i]
+            loss += self.smoothl1(upsampled_prediction[valid_pixels], label[valid_pixels]) * self.weights[stage][
+                i].item()
 
         return loss
 
@@ -46,7 +47,7 @@ class MultilayerSmoothL1viaPool(torch.nn.Module):
         loss = 0
         for i in self.weights[stage].nonzero():
             downsampled_label = self.multiScales[i](label)
-            loss += self.smoothl1(predictions[i], downsampled_label) * self.weights[stage][i]
+            loss += self.smoothl1(predictions[i], downsampled_label) * self.weights[stage][i].item()
         return loss
 
 
