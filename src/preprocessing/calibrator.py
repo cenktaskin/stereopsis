@@ -14,6 +14,7 @@ class Calibrator:
     extrinsics_keys = ["return_value", "_", "_", "_", "_", "rotation_matrix", "translation_vector",
                        "essential_matrix", "fundamental_matrix"]
     rectification_keys = ["R1", "R2", "P1", "P2", "Q"]
+    optimal_camera_matrix_keys = ["new_camera_matrix", "roi"]
 
     def __init__(self, data_id):
         self.data_handler = DataHandler(data_id)
@@ -53,12 +54,13 @@ class Calibrator:
             self.data_handler.save_camera_info(corner_wiki, cam_idx, 'corners')
 
     def compute_intrinsics(self, cam_idx, save_results=False):
+        img_size = self.data_handler.get_random_img(cam_idx).shape[:2]
         corners = list(self.data_handler.load_camera_info(cam_idx, 'corners').values())
         print(f"Calibrating with {len(corners)} frames...")
         start_time = time.time()
         result = cv2.calibrateCamera(objectPoints=np.tile(self.board, (len(corners), 1, 1)),
                                      imagePoints=corners, cameraMatrix=None, distCoeffs=None,
-                                     imageSize=self.data_handler.get_random_img(cam_idx).shape[:2])
+                                     imageSize=img_size)
         duration = time.time() - start_time
         intrinsics = {x: result[i] for i, x in enumerate(self.intrinsics_keys)}
 
@@ -68,6 +70,12 @@ class Calibrator:
               f"Distortion Parameters:\n {intrinsics['distortion_coeffs']} \n\n"
               f"Rotation vectors (first):\n {intrinsics['rotation_vectors'][0]} \n\n"
               f"Translation vectors (first):\n {intrinsics['translation_vectors'][0]}")
+
+        result = cv2.getOptimalNewCameraMatrix(cameraMatrix=intrinsics['intrinsic_matrix'],
+                                               distCoeffs=intrinsics['distortion_coeffs'],
+                                               imageSize=img_size, alpha=1)
+
+        intrinsics.update({x: result[i] for i, x in enumerate(self.optimal_camera_matrix_keys)})
 
         if save_results:
             self.data_handler.save_camera_info(intrinsics, cam_idx, 'intrinsics')
@@ -135,20 +143,20 @@ class Calibrator:
 if __name__ == "__main__":
     calibrator = Calibrator(data_id="calibration-20220610")
 
-    find_corner = False
-    if find_corner:
+    corner_finding = False
+    if corner_finding:
         for cam in range(3):
             calibrator.find_corners(cam_idx=cam, review=True, save_results=False)
 
-    intrinsic_calibration = False
+    intrinsic_calibration = True
     if intrinsic_calibration:
         for cam in range(3):
-            calibrator.compute_intrinsics(cam_idx=cam, save_results=False)
+            calibrator.compute_intrinsics(cam_idx=cam, save_results=True)
 
     extrinsic_calibration = False
     if extrinsic_calibration:
         calibrator.compute_extrinsics(cam0_idx=1, cam1_idx=0, save_results=False)
 
-    rectification = True
+    rectification = False
     if rectification:
         calibrator.compute_rectification(cam0_idx=1, cam1_idx=0, save_results=False)
