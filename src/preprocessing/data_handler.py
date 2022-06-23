@@ -20,16 +20,6 @@ class DataHandler:
     def __len__(self):
         return len(self.ts_list)
 
-    def review_frame(self, fr, cam_idx):
-        win_scale = 2
-        if cam_idx == 2:
-            win_scale = 7
-        self.frame_reviewer(fr, win_scale)
-
-    @staticmethod
-    def parse_stereo_img(st_img):
-        return np.split(st_img, 2, axis=1)
-
     def get_img(self, ts, cam_index):
         if cam_index < 2:
             stereo_img = cv2.imread(self.data_dir.joinpath(f"st_{ts}.tiff").as_posix())
@@ -54,33 +44,42 @@ class DataHandler:
     def get_random_img(self, cam_idx):
         return self.get_img(self.get_random_ts(), cam_idx)
 
+    @staticmethod
+    def parse_stereo_img(st_img):
+        return np.split(st_img, 2, axis=1)
+
+    def review_frame(self, fr, cam_idx=0, verbose=False):
+        win_scale = 2
+        if cam_idx == 2:
+            win_scale = 7
+        return self.frame_reviewer(fr, win_scale, verbose)
+
 
 class FrameReviewer:
-    def __init__(self, pos_key=32, neg_key=110, quit_key=113, verbose=False):
+    def __init__(self, pos_key=32, neg_key=110, quit_key=113, ):
         self.pos_key = pos_key
         self.neg_key = neg_key
         self.quit_key = quit_key
         self.valid_keys = [pos_key, neg_key, quit_key]
-        self.verbose = verbose
 
-    def __call__(self, img, win_scale=None):
+    def __call__(self, img, win_scale=None, verbose=False):
         cv2.namedWindow("img", cv2.WINDOW_NORMAL)
         cv2.imshow("img", img)
         if win_scale:
             cv2.resizeWindow("img", *(np.array(img.shape)[:2] * win_scale))
         cv2.moveWindow("img", 0, 0)
         while (key_press := cv2.waitKey() & 0xFF) not in self.valid_keys:
-            if self.verbose:
+            if verbose:
                 print(f"Wrong key is pressed, probably {chr(key_press)}")
                 print(f"Possible keys {[chr(i) for i in self.valid_keys]}")
                 print(f"Try again...")
         cv2.destroyAllWindows()
         if key_press == self.pos_key:
-            if self.verbose:
+            if verbose:
                 print(f"Approved")
             return True
         elif key_press == self.neg_key:
-            if self.verbose:
+            if verbose:
                 print(f"Rejected")
             return False
         elif key_press == self.quit_key:

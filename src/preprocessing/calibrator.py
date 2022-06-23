@@ -1,6 +1,7 @@
 import numpy as np
 from cv2 import cv2
 from data_handler import DataHandler
+import time
 
 
 class Calibrator:
@@ -8,9 +9,14 @@ class Calibrator:
     ir_flags = cv2.CALIB_CB_ADAPTIVE_THRESH
     board_size = (6, 9)
     square_size = 25.5  # in mm
+    intrinsics_keys = ["return_value", "intrinsic_matrix", "distortion_coeffs", "rotation_vectors",
+                       "translation_vectors"]
+    extrinsics_keys = ["return_value", "_", "_", "_", "_", "rotation_matrix", "translation_vector",
+                       "essential_matrix", "fundamental_matrix"]
 
     def __init__(self, data_id):
         self.data_handler = DataHandler(data_id)
+        self.board = self.create_board(*self.board_size, self.square_size)
 
     @staticmethod
     def create_board(n0, n1, sq_size=1.0):
@@ -19,7 +25,7 @@ class Calibrator:
         ch_board[:, :2] = np.mgrid[0:n0, 0:n1].T.reshape(-1, 2)
         return ch_board * sq_size
 
-    def find_corners(self, cam_idx, review=True, save_results=True):
+    def find_corners(self, cam_idx, review=True, save_results=False):
         corner_wiki = {}
         for i, ts in enumerate(self.data_handler.ts_list):
             img = self.data_handler.get_img(ts, cam_idx)
@@ -45,8 +51,70 @@ class Calibrator:
         if save_results:
             self.data_handler.save_camera_info(corner_wiki, cam_idx, 'corners')
 
+    def calibrate_intrinsics(self, cam_idx, save_results=False):
+        corners = list(self.data_handler.load_camera_info(cam_idx, 'corners').values())
+        print(f"Calibrating with {len(corners)} frames...")
+        start_time = time.time()
+        result = cv2.calibrateCamera(objectPoints=np.tile(self.board, (len(corners), 1, 1)),
+                                     imagePoints=corners, cameraMatrix=None, distCoeffs=None,
+                                     imageSize=self.data_handler.get_random_img(cam_idx).shape[:2])
+        duration = time.time() - start_time
+        intrinsics = {x: result[i] for i, x in enumerate(self.intrinsics_keys)}
+
+        print(f"\nCamera calibrated in {duration:.2f} seconds \n"
+              f"Reprojection error: {intrinsics['return_value']} \n\n"
+              f"CameraMatrix:\n {intrinsics['intrinsic_matrix']} \n\n"
+              f"Distortion Parameters:\n {intrinsics['distortion_coeffs']} \n\n"
+              f"Rotation vectors (first):\n {intrinsics['rotation_vectors'][0]} \n\n"
+              f"Translation vectors (first):\n {intrinsics['translation_vectors'][0]}")
+
+        if save_results:
+            self.data_handler.save_camera_info(intrinsics, cam_idx, 'intrinsics')
+
+    def calibrate_extrinsic(self, cam0_idx, cam1_idx, save_results=False):
+        corners0 = self.data_handler.load_camera_info(cam0_idx, 'corners')
+        corners1 = self.data_handler.load_camera_info(cam1_idx, 'corners')
+        intrinsics0 = self.data_handler.load_camera_info(cam0_idx, 'intrinsics')
+        intrinsics1 = self.data_handler.load_camera_info(cam1_idx, 'intrinsics')
+
+        common_ts = corners0.keys() & corners1.keys()
+        print(f"Calibrating with {len(common_ts)} frames...")
+
+        start_time = time.time()
+        result = cv2.stereoCalibrate(objectPoints=np.tile(self.board, (len(common_ts), 1, 1)),
+                                     imagePoints1=[corners0[ts] for ts in common_ts],
+                                     imagePoints2=[corners1[ts] for ts in common_ts],
+                                     cameraMatrix1=intrinsics0['intrinsic_matrix'],
+                                     cameraMatrix2=intrinsics1['intrinsic_matrix'],
+                                     distCoeffs1=intrinsics0['distortion_coeffs'],
+                                     distCoeffs2=intrinsics1['distortion_coeffs'],
+                                     imageSize=None)
+        duration = time.time() - start_time
+        extrinsics = {x: result[i] for i, x in enumerate(self.extrinsics_keys)}
+        print(f"\nCamera calibrated in {duration:.2f} seconds \n"
+              f"Reprojection error: {extrinsics['return_value']} \n\n"
+              f"R Matrix:\n {extrinsics['rotation_matrix']} \n\n"
+              f"T Vects:\n {extrinsics['translation_vector']} \n\n"
+              f"Essential Matrix:\n {extrinsics['essential_matrix']} \n\n"
+              f"Fundamental Matrix:\n {extrinsics['fundamental_matrix']}")
+
+        if save_results:
+            self.data_handler.save_camera_info(extrinsics, cam1_idx, 'extrinsics')
+
 
 if __name__ == "__main__":
     calibrator = Calibrator(data_id="calibration-20220610")
-    for cam in range(3):
-        calibrator.find_corners(cam_idx=2, review=True, save_results=False)
+
+    find_corner = False
+    if find_corner:
+        for cam in range(3):
+            calibrator.find_corners(cam_idx=cam, review=True, save_results=False)
+
+    intrinsic_calibration = False
+    if intrinsic_calibration:
+        for cam in range(3):
+            calibrator.calibrate_intrinsics(cam_idx=cam, save_results=False)
+
+    extrinsic_calibration = True
+    if extrinsic_calibration:
+        calibrator.calibrate_extrinsic(cam0_idx=1, cam1_idx=0, save_results=True)
