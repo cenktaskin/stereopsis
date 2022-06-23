@@ -1,5 +1,5 @@
 import numpy as np
-from dataset import data_path
+from src.dataset import data_path
 from tqdm import tqdm
 from cv2 import cv2
 import os
@@ -56,50 +56,51 @@ class ImageResizer(object):
         return self.resize_img(cropped)
 
 
-dataset_type = "fullres"  # fullres or origres
-# after making sure it works, you can turns this into glob
-acquired_datasets = ["202206101932", "202206101937", "202206101612"]
-data_dirs = [data_path.joinpath(f"raw/rawdata-{d}") for d in acquired_datasets]
-data_dirs = [data_dirs[1]]
-total_imgs = sum([sum([len(files) for _, _, files in os.walk(i)]) for i in data_dirs]) // 2
+if __name__ == "__main__":
+    dataset_type = "fullres"  # fullres or origres
+    # after making sure it works, you can turns this into glob
+    acquired_datasets = ["202206101932", "202206101937", "202206101612"]
+    data_dirs = [data_path.joinpath(f"raw/rawdata-{d}") for d in acquired_datasets]
+    data_dirs = [data_dirs[1]]
+    total_imgs = sum([sum([len(files) for _, _, files in os.walk(i)]) for i in data_dirs]) // 2
 
-target_sample_res = (384, 768)
-target_label_res = target_sample_res
-if dataset_type == "origres":
-    target_label_res = (112, 224)
-sample_resizer = ImageResizer(target_sample_res)
-label_resizer = ImageResizer(target_label_res)
+    target_sample_res = (384, 768)
+    target_label_res = target_sample_res
+    if dataset_type == "origres":
+        target_label_res = (112, 224)
+    sample_resizer = ImageResizer(target_sample_res)
+    label_resizer = ImageResizer(target_label_res)
 
-clean_dataset_path = data_path.joinpath(f"processed/dataset-20220610-{dataset_type}/")
-if not clean_dataset_path.exists():
-    clean_dataset_path.mkdir()
+    clean_dataset_path = data_path.joinpath(f"processed/dataset-20220610-{dataset_type}/")
+    if not clean_dataset_path.exists():
+        clean_dataset_path.mkdir()
 
-stats = np.zeros(14)
-with tqdm(total=total_imgs) as pbar:
-    for data_dir in data_dirs:
-        for img_path in data_dir.glob("st_*.tiff"):
-            ts = img_path.stem[3:]
-            raw_image = cv2.imread(img_path.as_posix())
-            if not raw_image.any():
-                # in the last dataset there were mjpeg errors causing some frames to be emtpy
-                continue
+    stats = np.zeros(14)
+    with tqdm(total=total_imgs) as pbar:
+        for data_dir in data_dirs:
+            for img_path in data_dir.glob("st_*.tiff"):
+                ts = img_path.stem[3:]
+                raw_image = cv2.imread(img_path.as_posix())
+                if not raw_image.any():
+                    # in the last dataset there were mjpeg errors causing some frames to be emtpy
+                    continue
 
-            raw_left, raw_right = np.split(raw_image, 2, axis=1)
-            label_path = img_path.with_stem(f"dp_{ts}")
-            raw_label = cv2.imread(label_path.as_posix(), flags=cv2.IMREAD_UNCHANGED)
+                raw_left, raw_right = np.split(raw_image, 2, axis=1)
+                label_path = img_path.with_stem(f"dp_{ts}")
+                raw_label = cv2.imread(label_path.as_posix(), flags=cv2.IMREAD_UNCHANGED)
 
-            img_left = sample_resizer(raw_left)
-            img_right = sample_resizer(raw_right)
-            img_label = label_resizer(raw_label)
+                img_left = sample_resizer(raw_left)
+                img_right = sample_resizer(raw_right)
+                img_label = label_resizer(raw_label)
 
-            stats += np.concatenate(
-                [np.array(cv2.meanStdDev(img_left)).flatten(),
-                 np.array(cv2.meanStdDev(img_right)).flatten(),
-                 np.array(cv2.meanStdDev(img_label)).flatten()]) / total_imgs
-            # cv2.imwrite(clean_dataset_path.joinpath(f"sl_{ts}.tiff").as_posix(), img_left)
-            # cv2.imwrite(clean_dataset_path.joinpath(f"sr_{ts}.tiff").as_posix(), img_right)
-            # cv2.imwrite(clean_dataset_path.joinpath(f"dp_{ts}.tiff").as_posix(), img_label)
-            pbar.update(1)
+                stats += np.concatenate(
+                    [np.array(cv2.meanStdDev(img_left)).flatten(),
+                     np.array(cv2.meanStdDev(img_right)).flatten(),
+                     np.array(cv2.meanStdDev(img_label)).flatten()]) / total_imgs
+                # cv2.imwrite(clean_dataset_path.joinpath(f"sl_{ts}.tiff").as_posix(), img_left)
+                # cv2.imwrite(clean_dataset_path.joinpath(f"sr_{ts}.tiff").as_posix(), img_right)
+                # cv2.imwrite(clean_dataset_path.joinpath(f"dp_{ts}.tiff").as_posix(), img_label)
+                pbar.update(1)
 
-stats[:-2] /= 255
-np.savetxt(clean_dataset_path.joinpath("stats.txt"), stats)
+    stats[:-2] /= 255
+    np.savetxt(clean_dataset_path.joinpath("stats.txt"), stats)
