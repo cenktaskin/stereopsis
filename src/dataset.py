@@ -43,7 +43,7 @@ def imshow(inp, title=None):
     plt.pause(0.01)  # pause a bit so that plots are updated
 
 
-def show_images(imgs, titles=(), row_count=1, col_count=None):
+def show_images(imgs, titles=(), row_count=1, col_count=None, main_title=None):
     if not col_count:
         col_count = math.ceil(len(imgs) / row_count)
     fig, axs = plt.subplots(row_count, col_count)
@@ -60,6 +60,8 @@ def show_images(imgs, titles=(), row_count=1, col_count=None):
             pass
         ax.imshow(img, interpolation=None)
     mng.resize(*mng.window.maxsize())
+    if main_title:
+        fig.suptitle(main_title)
     fig.show()
     plt.waitforbuttonpress()
     plt.close(fig)
