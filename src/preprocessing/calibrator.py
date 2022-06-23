@@ -13,6 +13,7 @@ class Calibrator:
                        "translation_vectors"]
     extrinsics_keys = ["return_value", "_", "_", "_", "_", "rotation_matrix", "translation_vector",
                        "essential_matrix", "fundamental_matrix"]
+    rectification_keys = ["R1", "R2", "P1", "P2", "Q"]
 
     def __init__(self, data_id):
         self.data_handler = DataHandler(data_id)
@@ -51,7 +52,7 @@ class Calibrator:
         if save_results:
             self.data_handler.save_camera_info(corner_wiki, cam_idx, 'corners')
 
-    def calibrate_intrinsics(self, cam_idx, save_results=False):
+    def compute_intrinsics(self, cam_idx, save_results=False):
         corners = list(self.data_handler.load_camera_info(cam_idx, 'corners').values())
         print(f"Calibrating with {len(corners)} frames...")
         start_time = time.time()
@@ -71,7 +72,7 @@ class Calibrator:
         if save_results:
             self.data_handler.save_camera_info(intrinsics, cam_idx, 'intrinsics')
 
-    def calibrate_extrinsic(self, cam0_idx, cam1_idx, save_results=False):
+    def compute_extrinsics(self, cam0_idx, cam1_idx, save_results=False):
         corners0 = self.data_handler.load_camera_info(cam0_idx, 'corners')
         corners1 = self.data_handler.load_camera_info(cam1_idx, 'corners')
         intrinsics0 = self.data_handler.load_camera_info(cam0_idx, 'intrinsics')
@@ -101,6 +102,35 @@ class Calibrator:
         if save_results:
             self.data_handler.save_camera_info(extrinsics, cam1_idx, 'extrinsics')
 
+    def compute_rectification(self, cam0_idx, cam1_idx, save_results=False):
+        intrinsics0 = self.data_handler.load_camera_info(cam0_idx, 'intrinsics')
+        intrinsics1 = self.data_handler.load_camera_info(cam1_idx, 'intrinsics')
+        extrinsics = self.data_handler.load_camera_info(cam1_idx, 'extrinsics')
+
+        start_time = time.time()
+        result = cv2.stereoRectify(cameraMatrix1=intrinsics0['intrinsic_matrix'],
+                                   cameraMatrix2=intrinsics1['intrinsic_matrix'],
+                                   distCoeffs1=intrinsics0['distortion_coeffs'],
+                                   distCoeffs2=intrinsics1['distortion_coeffs'],
+                                   imageSize=self.data_handler.get_random_img(cam1_idx).shape[:2],
+                                   R=extrinsics['rotation_matrix'],
+                                   T=extrinsics['translation_vector'],
+                                   alpha=0)
+
+        duration = time.time() - start_time
+
+        rectification = {x: result[i] for i, x in enumerate(self.rectification_keys)}
+
+        print(f"\nCamera calibrated in {duration:.2f} seconds \n"
+              f"Rectification transform0: {rectification['R1']} \n\n"
+              f"Rectification transform1: {rectification['R2']} \n\n"
+              f"Projection matrix0:\n {rectification['P1']} \n\n"
+              f"Projection matrix1:\n {rectification['P2']} \n\n"
+              f"Disparity2Depth Matrix:\n {rectification['Q']}")
+
+        if save_results:
+            self.data_handler.save_camera_info(rectification, cam1_idx, 'rectification')
+
 
 if __name__ == "__main__":
     calibrator = Calibrator(data_id="calibration-20220610")
@@ -113,8 +143,12 @@ if __name__ == "__main__":
     intrinsic_calibration = False
     if intrinsic_calibration:
         for cam in range(3):
-            calibrator.calibrate_intrinsics(cam_idx=cam, save_results=False)
+            calibrator.compute_intrinsics(cam_idx=cam, save_results=False)
 
-    extrinsic_calibration = True
+    extrinsic_calibration = False
     if extrinsic_calibration:
-        calibrator.calibrate_extrinsic(cam0_idx=1, cam1_idx=0, save_results=True)
+        calibrator.compute_extrinsics(cam0_idx=1, cam1_idx=0, save_results=False)
+
+    rectification = True
+    if rectification:
+        calibrator.compute_rectification(cam0_idx=1, cam1_idx=0, save_results=False)
