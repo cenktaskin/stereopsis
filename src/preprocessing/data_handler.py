@@ -67,19 +67,20 @@ class FrameReviewer:
         cv2.namedWindow("img", cv2.WINDOW_NORMAL)
         cv2.imshow("img", img)
         if win_scale:
-            cv2.resizeWindow("img", np.array(img.shape) * win_scale)
+            cv2.resizeWindow("img", *(np.array(img.shape)[:2] * win_scale))
+        cv2.moveWindow("img", 0, 0)
         while (key_press := cv2.waitKey() & 0xFF) not in self.valid_keys:
             if self.verbose:
                 print(f"Wrong key is pressed, probably {chr(key_press)}")
                 print(f"Possible keys {[chr(i) for i in self.valid_keys]}")
-            print(f"Try again...")
+                print(f"Try again...")
         cv2.destroyAllWindows()
         if key_press == self.pos_key:
             if self.verbose:
                 print(f"Approved")
             return True
         elif key_press == self.neg_key:
-            if self.neg_key:
+            if self.verbose:
                 print(f"Rejected")
             return False
         elif key_press == self.quit_key:
