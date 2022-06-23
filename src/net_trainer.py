@@ -9,7 +9,8 @@ from pretrained_weights import fetch_pretrained_dispnet_weights
 
 
 def trainer(model_name, train_dataset, validation_dataset, loss_fn, accuracy_fn, current_device, writer, epochs,
-            batch_size, batch_norm, not_pretrained, learning_rate, scheduler_step, scheduler_gamma, num_workers, ):
+            batch_size, batch_norm, not_pretrained, learning_rate, scheduler_step, scheduler_gamma, num_workers,
+            freeze_encoder):
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
     val_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
     train_batch_count = len(train_dataloader)
@@ -23,7 +24,10 @@ def trainer(model_name, train_dataset, validation_dataset, loss_fn, accuracy_fn,
     writer.add_graph(model, torch.randn((1, 6, 384, 768), requires_grad=False))
     if not not_pretrained:
         model.load_state_dict(fetch_pretrained_dispnet_weights(model))
+        if freeze_encoder:
+            model.encoder.requires_grad_(False)
     model = model.to(current_device)
+    print(sum(p.numel() for p in model.parameters() if p.requires_grad))
 
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step, gamma=scheduler_gamma)
@@ -77,5 +81,8 @@ def trainer(model_name, train_dataset, validation_dataset, loss_fn, accuracy_fn,
         if i % each_round == each_round - 1:
             optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
             scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step, gamma=scheduler_gamma)
+
+        if i == (epochs // 2):
+            torch.save(model.state_dict(), results_path.joinpath(f"model-e{i}.pt"))
 
     torch.save(model.state_dict(), results_path.joinpath(f"model-e{epochs}.pt"))

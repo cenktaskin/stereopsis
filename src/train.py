@@ -14,26 +14,31 @@ from net_trainer import trainer
 
 def generate_report():
     return f"""
-### RUN REPORT
+### REPORT
+#### Run
+    Name: {args.run_name}
     Timestamp: {timestamp}
-    Run name: {args.run_name}
-    Host name: {socket.gethostname()}
+    Host: {socket.gethostname()}
     Device: {current_device}
     Num_workers: {args.num_workers}
-    Model name: {model_name}
+#### Model
+    Name: {model_name}
     Pretrained: {not args.not_pretrained}
+    Encoder frozen: {args.freeze_encoder}
+    Loss function: {loss_fn.name}
+    Accuracy metric: {accuracy_fn.name}
+#### Data
     Dataset: {dataset_id}-{args.dataset_type}
-    Train samples: {train_size} 
-    Validation samples: {val_size}
+    #Samples train: {train_size} 
+             val: {val_size}
+#### Hparams
     Epochs: {args.epochs}
     Batch size: {args.batch_size}
     Batch norm: {args.batch_norm}
+    Optimizer: Adam
     Learning rate: {args.learning_rate}
     Scheduler step: {args.scheduler_step} 
-    Scheduler gamma: {args.scheduler_gamma}
-    Loss function: {loss_fn.name}
-    Accuracy metric: {accuracy_fn.name}
-    Optimizer: Adam
+    Scheduler gamma: {args.scheduler_gamma} 
 """
 
 
@@ -41,7 +46,7 @@ arg_parser = argparse.ArgumentParser(description="NN Trainer")
 arg_parser.add_argument("-e", "--epochs", type=int, default=10)
 arg_parser.add_argument("-bs", "--batch-size", type=int, default=16)
 arg_parser.add_argument("-bn", "--batch-norm", type=bool, default=True)
-arg_parser.add_argument("-npre", "--not-pretrained", action='store_true')
+arg_parser.add_argument("-np", "--not-pretrained", action='store_true')
 arg_parser.add_argument("-lr", "--learning-rate", type=float, default=10 ** -4)
 arg_parser.add_argument("-schs", "--scheduler-step", type=int, default=10)
 arg_parser.add_argument("-schg", "--scheduler-gamma", type=float, default=0.5)
@@ -50,6 +55,7 @@ arg_parser.add_argument("-dt", "--dataset-type", type=str, default="fullres")
 arg_parser.add_argument("-n", "--run-name", type=str, default=None)
 arg_parser.add_argument("-sub", "--subsample", type=int, default=False)
 arg_parser.add_argument("-lf", "--loss-func-idx", type=int, default=0)
+arg_parser.add_argument("-fe", "--freeze-encoder", action='store_true')
 args = arg_parser.parse_args()
 
 model_name = "dispnet"
