@@ -27,7 +27,7 @@ def trainer(model_name, train_dataset, validation_dataset, loss_fn, accuracy_fn,
         if freeze_encoder:
             model.encoder.requires_grad_(False)
     model = model.to(current_device)
-    print(sum(p.numel() for p in model.parameters() if p.requires_grad))
+    # print(sum(p.numel() for p in model.parameters() if p.requires_grad))
 
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step, gamma=scheduler_gamma)
