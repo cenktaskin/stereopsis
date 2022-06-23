@@ -7,7 +7,6 @@ import yaml
 class DataHandler:
     project_path = Path(__file__).joinpath("../../..").resolve()
     data_path = project_path.joinpath('data')
-    img_size = {0: (720, 1280), 1: (720, 1280), 2: (171, 224)}
 
     def __init__(self, data_id):
         self.data_dir = self.data_path.joinpath("raw", data_id)
@@ -21,8 +20,11 @@ class DataHandler:
     def __len__(self):
         return len(self.ts_list)
 
-    def review_frame(self, fr):
-        self.frame_reviewer(fr)
+    def review_frame(self, fr, cam_idx):
+        win_scale = 2
+        if cam_idx == 2:
+            win_scale = 7
+        self.frame_reviewer(fr, win_scale)
 
     @staticmethod
     def parse_stereo_img(st_img):
@@ -32,7 +34,7 @@ class DataHandler:
         if cam_index < 2:
             stereo_img = cv2.imread(self.data_dir.joinpath(f"st_{ts}.tiff").as_posix())
             return self.parse_stereo_img(stereo_img)[cam_index]
-        elif cam_index == 3:
+        elif cam_index == 2:
             return cv2.imread(self.data_dir.joinpath(f"ir_{ts}.tiff").as_posix(), flags=cv2.IMREAD_UNCHANGED)
 
     def load_camera_info(self, cam_index, parameter_type):
@@ -61,8 +63,11 @@ class FrameReviewer:
         self.valid_keys = [pos_key, neg_key, quit_key]
         self.verbose = verbose
 
-    def __call__(self, img):
+    def __call__(self, img, win_scale=None):
+        cv2.namedWindow("img", cv2.WINDOW_NORMAL)
         cv2.imshow("img", img)
+        if win_scale:
+            cv2.resizeWindow("img", np.array(img.shape) * win_scale)
         while (key_press := cv2.waitKey() & 0xFF) not in self.valid_keys:
             if self.verbose:
                 print(f"Wrong key is pressed, probably {chr(key_press)}")
