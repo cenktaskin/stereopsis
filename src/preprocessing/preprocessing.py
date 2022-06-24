@@ -3,6 +3,7 @@ from data_io import CalibrationDataHandler, RawDataHandler
 from tqdm import tqdm
 import pickle
 import numpy as np
+from src.dataset import show_images
 
 
 class ImageResizer:
@@ -17,6 +18,7 @@ class ImageResizer:
         self.h_slice = None
         self.verbose = verbose
         self.resize_method = None
+        self.just_resize = False
 
     def init_raw_size(self, sample):
         self.initial_h = sample.shape[0]
@@ -27,6 +29,8 @@ class ImageResizer:
     def calculate_slices(self):
         h_crop_target = int(self.initial_w / self.target_aspect_ratio)
         reduce_h_amount = self.initial_h - h_crop_target
+        if reduce_h_amount == 0:
+            self.just_resize = True
         self.h_slice = slice(reduce_h_amount // 2, h_crop_target + reduce_h_amount // 2)
 
     def define_method(self):
@@ -48,12 +52,13 @@ class ImageResizer:
         return res
 
     def __call__(self, img):
-        if not self.h_slice:
+        if not self.h_slice or not self.resize_method:
             self.init_raw_size(img)
-        cropped = self.crop_img(img)
-        if cropped.shape == self.target_shape:
-            return cropped
-        return self.resize_img(cropped)
+        if not self.just_resize:
+            img = self.crop_img(img)
+        if img.shape != self.target_shape:
+            img = self.resize_img(img)
+        return img
 
 
 class Preprocessor:
@@ -72,18 +77,29 @@ class Preprocessor:
     def __len__(self):
         return sum([len(dh) for dh in self.data_handlers])
 
-    def undistort(self, img, cam_idx):
-        mapx, mapy = self.calibration_data.load_camera_info(cam_idx, 'undistortion-map')
-        return cv2.remap(img, mapx, mapy, cv2.INTER_CUBIC)
-
-    def rectify(self, img0, img1, cam0_idx, cam1_idx):
+    def rectify_pair(self, img0, img1, cam0_idx, cam1_idx):
         mapx0, mapy0, mapx1, mapy1 = self.calibration_data.load_camera_info(cam1_idx,
                                                                             f'rectification-map-wrt-cam{cam0_idx}')
         img0_rectified = cv2.remap(img0, mapx0, mapy0, cv2.INTER_CUBIC)
         img1_rectified = cv2.remap(img1, mapx1, mapy1, cv2.INTER_CUBIC)
         return img0_rectified, img1_rectified
 
-    def crop_and_resize(self, save_result=True, verbose=False):
+    def iterate_over_imgs(self):
+        with tqdm(total=self.__len__()) as pbar:
+            for dh in self.data_handlers:
+                for ts, st, d in dh.iterate_over_imgs():
+                    if not st.any():
+                        pbar.update(1)
+                        continue
+                    yield ts, st, d
+                    pbar.update(1)
+
+    def save_processed_imgs(self, imgs, ts):
+        cv2.imwrite(self.output_path.joinpath(f"sl_{ts}.tiff").as_posix(), imgs[0])
+        cv2.imwrite(self.output_path.joinpath(f"sr_{ts}.tiff").as_posix(), imgs[1])
+        cv2.imwrite(self.output_path.joinpath(f"dp_{ts}.tiff").as_posix(), imgs[2])
+
+    def crop_and_resize(self, save_result=False, verbose=False):
         target_label_res = self.target_res
         if self.output_name.split("-")[-1] == "origres":
             target_label_res = (112, 224)
@@ -91,33 +107,42 @@ class Preprocessor:
         label_resizer = ImageResizer(target_label_res, verbose=verbose)
 
         stats = np.zeros(14)
-        with tqdm(total=self.__len__()) as pbar:
-            for dh in self.data_handlers:
-                for raw_st, raw_depth, ts in dh.iterate_over_imgs():
-                    if not raw_st.any():
-                        continue
-                    raw_left, raw_right = np.split(raw_st, 2, axis=1)
 
-                    img_left = sample_resizer(raw_left)
-                    img_right = sample_resizer(raw_right)
-                    img_label = label_resizer(raw_depth)
+        for ts, raw_st, raw_depth in self.iterate_over_imgs():
+            raw_left, raw_right = np.split(raw_st, 2, axis=1)
 
-                    stats += np.concatenate(
-                        [np.array(cv2.meanStdDev(img_left)).flatten(),
-                         np.array(cv2.meanStdDev(img_right)).flatten(),
-                         np.array(cv2.meanStdDev(img_label)).flatten()])
+            img_left = sample_resizer(raw_left)
+            img_right = sample_resizer(raw_right)
+            img_label = label_resizer(raw_depth)
 
-                    if save_result:
-                        cv2.imwrite(self.output_path.joinpath(f"sl_{ts}.tiff").as_posix(), img_left)
-                        cv2.imwrite(self.output_path.joinpath(f"sr_{ts}.tiff").as_posix(), img_right)
-                        cv2.imwrite(self.output_path.joinpath(f"dp_{ts}.tiff").as_posix(), img_label)
+            stats += np.concatenate(
+                [np.array(cv2.meanStdDev(img_left)).flatten(),
+                 np.array(cv2.meanStdDev(img_right)).flatten(),
+                 np.array(cv2.meanStdDev(img_label)).flatten()])
 
-                    pbar.update(1)
+            if save_result:
+                self.save_processed_imgs([img_left, img_right, img_label], ts)
 
         stats[:-2] /= 255
         stats /= self.__len__()
         with open(self.output_path.joinpath("stats.txt"), "wb") as f:
             pickle.dump(stats, f)
+
+    def undistort(self, save_results=False):
+        maps = [self.calibration_data.load_camera_info(i, 'undistortion-map') for i in range(3)]
+        sample_resizer = ImageResizer(self.target_res)
+        label_resizer = ImageResizer(self.target_res)
+        for ts, raw_st, raw_depth in self.iterate_over_imgs():
+            raw_left, raw_right = np.split(raw_st, 2, axis=1)
+            undistorted = []
+            for i, img in enumerate([raw_left, raw_right, raw_depth]):
+                undistorted += [cv2.remap(img, *maps[i], interpolation=cv2.INTER_CUBIC)]
+            final = [sample_resizer(i[:640, :, :]) for i in undistorted[:-1]] + [label_resizer(undistorted[-1])]
+            if save_results:
+                self.save_processed_imgs(final, ts)
+
+    def rectify(self, save_results=False):
+        pass
 
 
 if __name__ == "__main__":
@@ -125,5 +150,4 @@ if __name__ == "__main__":
                                 raw_datasets=["202206101932", "202206101937", "202206101612"],
                                 dataset_name="20220610-undistorted")
 
-    print(len(preprocessor))
-    preprocessor.crop_and_resize(save_result=False, verbose=True)
+    preprocessor.undistort(save_results=True)

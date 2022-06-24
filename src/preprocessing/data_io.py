@@ -37,7 +37,7 @@ class RawDataHandler:
 
     def iterate_over_imgs(self):
         for ts in self.ts_list:
-            yield self.get_img(ts, 0, parse_st=False), self.get_img(ts, 2), ts
+            yield ts, self.get_img(ts, 0, parse_st=False), self.get_img(ts, 2)
 
 
 class CalibrationDataHandler(RawDataHandler):
