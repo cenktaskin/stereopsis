@@ -43,17 +43,17 @@ def imshow(inp, title=None):
     plt.pause(0.01)  # pause a bit so that plots are updated
 
 
-def show_images(imgs, titles=(), row_count=1, col_count=None, main_title=None):
+def show_images(imgs, titles=(), row_count=1, col_count=None, main_title=None, is_bgr=False):
     if not col_count:
         col_count = math.ceil(len(imgs) / row_count)
     fig, axs = plt.subplots(row_count, col_count)
     mng = plt.get_current_fig_manager()
     for i, img in enumerate(imgs):
-        plt.subplot(row_count, col_count, i+1)
-        if torch.is_tensor(img):
-            img = img.numpy()
-        if len(img) < 10:
-            img = img.transpose((1, 2, 0))
+        plt.subplot(row_count, col_count, i + 1)
+        if torch.is_tensor(img):  # tensor to numpy
+            img = img.numpy().transpose((1, 2, 0))
+        if is_bgr and img.ndim > 2:  # bgr -> rgb
+            img = img[:, :, ::-1]
         try:
             plt.title(f"{titles[i]}")
         except:
