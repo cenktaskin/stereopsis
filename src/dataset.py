@@ -49,7 +49,7 @@ def show_images(imgs, titles=(), row_count=1, col_count=None, main_title=None):
     fig, axs = plt.subplots(row_count, col_count)
     mng = plt.get_current_fig_manager()
     for i, img in enumerate(imgs):
-        ax = axs[i // col_count, i % col_count]
+        plt.subplot(row_count, col_count, i+1)
         if torch.is_tensor(img):
             img = img.numpy()
         if len(img) < 10:
@@ -58,12 +58,13 @@ def show_images(imgs, titles=(), row_count=1, col_count=None, main_title=None):
             plt.title(f"{titles[i]}")
         except:
             pass
-        ax.imshow(img, interpolation=None)
+        plt.imshow(img, interpolation=None)
     mng.resize(*mng.window.maxsize())
     if main_title:
         fig.suptitle(main_title)
     fig.show()
-    plt.waitforbuttonpress()
+    while not plt.waitforbuttonpress():
+        pass
     plt.close(fig)
 
 
