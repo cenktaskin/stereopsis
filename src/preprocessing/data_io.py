@@ -1,42 +1,29 @@
 from pathlib import Path
 from cv2 import cv2
 import numpy as np
-import yaml
+import pickle
 
 
-class DataHandler:
+class RawDataHandler:
     project_path = Path(__file__).joinpath("../../..").resolve()
     data_path = project_path.joinpath('data')
 
-    def __init__(self, data_id):
-        self.data_dir = self.data_path.joinpath("raw", data_id)
-        self.ts_list = np.array([int(a.stem[3:]) for a in self.data_dir.glob('st*')])
-        self.processed_dir = self.data_path.joinpath("processed", data_id)
-        if not self.processed_dir.exists():
-            self.processed_dir.mkdir()
-        self.raw_ts_list = None
-        self.frame_reviewer = FrameReviewer()
+    def __init__(self, data_dir, prefixes):
+        self.data_dir = self.data_path.joinpath(data_dir)
+        self.prefixes = prefixes
+        self.ts_list = np.array([int(a.stem[3:]) for a in self.data_dir.glob(f'{self.prefixes[0]}*')])
 
     def __len__(self):
         return len(self.ts_list)
 
-    def get_img(self, ts, cam_index):
-        if cam_index < 2:
-            stereo_img = cv2.imread(self.data_dir.joinpath(f"st_{ts}.tiff").as_posix())
-            return self.parse_stereo_img(stereo_img)[cam_index]
-        elif cam_index == 2:
-            return cv2.imread(self.data_dir.joinpath(f"ir_{ts}.tiff").as_posix(), flags=cv2.IMREAD_UNCHANGED)
+    def get_img(self, ts, cam_index, parse_st=True):
+        img = cv2.imread(self.data_dir.joinpath(f"{self.prefixes[cam_index]}_{ts}.tiff").as_posix(), flags=-1)
+        if cam_index < 2 and parse_st:
+            img = self.parse_stereo_img(img)[cam_index]
+        return img
 
-    def load_camera_info(self, cam_index, parameter_type):
-        """parameter type has to be either intrinsic or extrinsic"""
-        with open(self.processed_dir.joinpath(f"cam{cam_index}-{parameter_type}.yaml"), 'r') as f:
-            print(f"Loaded {parameter_type} for camera{cam_index} from {f.name}")
-            return yaml.load(f, Loader=yaml.Loader)
-
-    def save_camera_info(self, obj, cam_index, parameter_type):
-        with open(self.processed_dir.joinpath(f"cam{cam_index}-{parameter_type}.yaml"), 'w') as f:
-            yaml.dump(obj, f)
-            print(f"Dumped {parameter_type} for camera{cam_index} to {f.name}")
+    def get_img_size(self, cam_index):
+        return self.get_img(self.ts_list[0], cam_index).shape[:2]
 
     def get_random_ts(self):
         return np.random.choice(self.ts_list, 1)[0]
@@ -47,6 +34,31 @@ class DataHandler:
     @staticmethod
     def parse_stereo_img(st_img):
         return np.split(st_img, 2, axis=1)
+
+    def iterate_over_imgs(self):
+        for ts in self.ts_list:
+            yield self.get_img(ts, 0, parse_st=False), self.get_img(ts, 2), ts
+
+
+class CalibrationDataHandler(RawDataHandler):
+    def __init__(self, data_id):
+        super(CalibrationDataHandler, self).__init__(f"raw/calibration-{data_id}", ("st", "st", "ir"))
+        self.processed_dir = self.data_path.joinpath("processed", f"calibration-results-{data_id}")
+        if not self.processed_dir.exists():
+            self.processed_dir.mkdir()
+        self.frame_reviewer = FrameReviewer()
+
+    def load_camera_info(self, cam_index, parameter_type, verbose=False):
+        with open(self.processed_dir.joinpath(f"cam{cam_index}-{parameter_type}.pkl"), 'rb') as f:
+            if verbose:
+                print(f"Loaded {parameter_type} for camera{cam_index} from {f.name}")
+            return pickle.load(f)
+
+    def save_camera_info(self, obj, cam_index, parameter_type, verbose=False):
+        with open(self.processed_dir.joinpath(f"cam{cam_index}-{parameter_type}.pkl"), 'wb') as f:
+            pickle.dump(obj, f)
+            if verbose:
+                print(f"Dumped {parameter_type} for camera{cam_index} to {f.name}")
 
     def review_frame(self, fr, cam_idx=0, verbose=False):
         win_scale = 2
@@ -87,14 +99,5 @@ class FrameReviewer:
 
 
 if __name__ == "__main__":
-    handler = DataHandler("calibration-20220610")
+    handler = CalibrationDataHandler("20220610")
     handler.review_frame(handler.get_random_img(0))
-
-    # if False:
-    #    with open(results_dir.joinpath(f"valid-frames.yaml"), 'w') as f:
-    #        yaml.dump(valid_frames, f)
-    #        print(f"Dumped valid frames for {data_date} to {f.name}")#
-    #
-    #    with open(results_dir.joinpath(f"valid-frames.yaml"), 'r') as f:
-    #        print(f"Loaded valid frames for dataset {data_date} from {f.name}")
-    #        a = yaml.load(f, Loader=yaml.Loader)
