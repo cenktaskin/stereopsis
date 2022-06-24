@@ -3,7 +3,6 @@ from data_io import CalibrationDataHandler, RawDataHandler
 from tqdm import tqdm
 import pickle
 import numpy as np
-from src.dataset import show_images
 
 
 class ImageResizer:
