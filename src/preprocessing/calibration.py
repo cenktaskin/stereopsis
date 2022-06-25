@@ -170,7 +170,7 @@ class Calibrator:
         print(f"Computed rectification maps for cam{cam0_idx} wrt cam{cam1_idx}")
 
         if save_results:
-            self.data_handler.save_camera_info((mapx0, mapy0, mapx1, mapy1), cam1_idx,
+            self.data_handler.save_camera_info(((mapx0, mapy0), (mapx1, mapy1)), cam1_idx,
                                                f'rectification-map-wrt-cam{cam0_idx}')
 
 
@@ -192,14 +192,14 @@ if __name__ == "__main__":
         for cam in range(3):
             calibrator.compute_undistortion_map(cam_idx=cam, save_results=False)
 
-    extrinsic_calibration = 1
+    extrinsic_calibration = 0
     if extrinsic_calibration:
         calibrator.compute_extrinsics(cam0_idx=1, cam1_idx=0, save_results=False)
 
-    rectification = 1
+    rectification = 0
     if rectification:
         calibrator.compute_rectification(cam0_idx=1, cam1_idx=0, save_results=False)
 
     rectification_map = 1
     if rectification_map:
-        calibrator.compute_rectification_maps(cam0_idx=1, cam1_idx=0, save_results=False)
+        calibrator.compute_rectification_maps(cam0_idx=1, cam1_idx=0, save_results=True)

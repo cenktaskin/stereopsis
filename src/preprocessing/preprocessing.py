@@ -132,7 +132,7 @@ class Preprocessor:
         sample_resizer = ImageResizer(self.target_res)
         label_resizer = ImageResizer(self.target_res)
         for ts, raw_st, raw_depth in self.iterate_over_imgs():
-            raw_left, raw_right = np.split(raw_st, 2, axis=1)
+            raw_left, raw_right = self.calibration_data.parse_stereo_img(raw_st)
             undistorted = []
             for i, img in enumerate([raw_left, raw_right, raw_depth]):
                 undistorted += [cv2.remap(img, *maps[i], interpolation=cv2.INTER_CUBIC)]
@@ -140,8 +140,20 @@ class Preprocessor:
             if save_results:
                 self.save_processed_imgs(final, ts)
 
-    def rectify(self, save_results=False):
-        pass
+    def rectify(self, cam0_idx, cam1_idx, save_results=False):
+        maps0, maps1 = self.calibration_data.load_camera_info(cam1_idx, f'rectification-map-wrt-cam{cam0_idx}')
+        map_label = self.calibration_data.load_camera_info(2, 'undistortion-map')
+        maps = {cam0_idx: maps0, cam1_idx: maps1, 2: map_label}
+        sample_resizer = ImageResizer(self.target_res)
+        label_resizer = ImageResizer(self.target_res)
+        for ts, raw_st, raw_depth in self.iterate_over_imgs():
+            raw_left, raw_right = self.calibration_data.parse_stereo_img(raw_st)
+            rectified = []
+            for i, img in enumerate([raw_left, raw_right, raw_depth]):
+                rectified += [cv2.remap(img, *maps[i], interpolation=cv2.INTER_CUBIC)]
+            final = [sample_resizer(i[:640, :, :]) for i in rectified[:-1]] + [label_resizer(rectified[-1][40:])]
+            if save_results:
+                self.save_processed_imgs(final, ts)
 
 
 if __name__ == "__main__":
@@ -150,3 +162,8 @@ if __name__ == "__main__":
                                 dataset_name="20220610-undistorted")
 
     preprocessor.undistort(save_results=True)
+
+    rectifier = Preprocessor(calibration_data_id="20220610",
+                             raw_datasets=["202206101932", "202206101937", "202206101612"],
+                             dataset_name="20220610-rectified")
+    rectifier.rectify(cam0_idx=1, cam1_idx=0, save_results=True)
