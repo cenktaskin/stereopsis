@@ -62,7 +62,7 @@ args = arg_parser.parse_args()
 
 model_name = "dispnet"
 timestamp = datetime.now().astimezone(pytz.timezone("Europe/Berlin")).strftime("%Y%m%d%H%M")
-run_id = f"{socket.gethostname()}-{timestamp}"
+run_id = f"{timestamp}-{socket.gethostname()}"
 if args.run_name:
     run_id += f"-{args.run_name}"
 
