@@ -3,7 +3,7 @@ from data_io import CalibrationDataHandler, RawDataHandler
 from tqdm import tqdm
 import pickle
 import numpy as np
-
+from src.dataset import show_images
 
 class ImageResizer:
     """first crops the height to fit the aspect ratio then resizes
@@ -161,9 +161,9 @@ if __name__ == "__main__":
                                 raw_datasets=["202206101932", "202206101937", "202206101612"],
                                 dataset_name="20220610-undistorted")
 
-    preprocessor.undistort(save_results=True)
+    preprocessor.undistort(save_results=False)
 
     rectifier = Preprocessor(calibration_data_id="20220610",
                              raw_datasets=["202206101932", "202206101937", "202206101612"],
                              dataset_name="20220610-rectified")
-    rectifier.rectify(cam0_idx=1, cam1_idx=0, save_results=True)
+    rectifier.rectify(cam0_idx=1, cam1_idx=0, save_results=False)
