@@ -27,6 +27,9 @@ class NNModel(nn.Module):
             DecoderBlock(c_in=64)
         ])
 
+    def get_trainable_parameter_count(self):
+        return sum(p.numel() for p in self.parameters() if p.requires_grad)
+
     def forward(self, x):
         contracting_x = ()
         predictions = ()
