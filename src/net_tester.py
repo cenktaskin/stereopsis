@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from torch.nn.functional import interpolate
 
 from dataset import show_images
 from loss import MaskedEPE, MultilayerSmoothL1viaPool, MultilayerSmoothL1
@@ -18,6 +19,6 @@ def tester(model, dataset, weights_name):
             loss = loss_fn(y_hat, y, stage=-1)
             accuracy = acc_fn(y_hat, y)
             tit = ["left_img", "right_img", "label", "pred"]
-            # interpolate still?
-            show_images([*np.split(x.squeeze(), 2, axis=0), y, y_hat[-1]], titles=tit, row_count=2,
+            pred = interpolate(y_hat[-1], size=y.shape[-2:], mode="bilinear")
+            show_images([*np.split(x.squeeze(), 2, axis=0), y, pred], titles=tit, row_count=2,
                         main_title=f"{weights_name} \n Loss:{loss:.4f}, EPE:{accuracy:.4f}")
