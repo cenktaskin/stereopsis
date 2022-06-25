@@ -1,28 +1,18 @@
 from pathlib import Path
 from tqdm import tqdm
-from importlib import import_module
 
 import torch
 
-from pretrained_weights import fetch_pretrained_dispnet_weights
 
-
-def trainer(model_name, dataset, loss_fn, accuracy_fn, current_device, writer, epochs,
-            batch_size, batch_norm, not_pretrained, learning_rate, scheduler_step, scheduler_gamma, num_workers,
-            freeze_encoder):
+def trainer(model, dataset, loss_fn, accuracy_fn, writer, epochs, batch_size, learning_rate, scheduler_step,
+            scheduler_gamma, num_workers):
     train_dataloader, val_dataloader = dataset.create_loaders(batch_size=batch_size, num_workers=num_workers)
     train_batch_count = len(train_dataloader)
     val_batch_count = len(val_dataloader)
 
+    current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     results_path = Path(writer.log_dir)  # can be refactored, if the midway model is not saved in the func
 
-    model_net = getattr(import_module(f"models.{model_name}"), "NNModel")
-    model = model_net(batch_norm)
-    writer.add_graph(model, torch.randn((1, 6, 384, 768), requires_grad=False))
-    if not not_pretrained:
-        model.load_state_dict(fetch_pretrained_dispnet_weights(model))
-        if freeze_encoder:
-            model.encoder.requires_grad_(False)
     model = model.to(current_device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
