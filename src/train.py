@@ -29,8 +29,8 @@ def generate_report():
     Accuracy metric: {accuracy_fn.name}
 #### Data
     Dataset: {dataset_id}-{args.dataset_type}
-    #Samples train: {train_size} 
-             val: {val_size}
+    #Samples train: {len(dataset.train_idx)} 
+             val: {len(dataset.val_idx)}
 #### Hparams
     Epochs: {args.epochs}
     Batch size: {args.batch_size}
@@ -48,12 +48,12 @@ arg_parser.add_argument("-bs", "--batch-size", type=int, default=16)
 arg_parser.add_argument("-bn", "--batch-norm", type=bool, default=True)
 arg_parser.add_argument("-np", "--not-pretrained", action='store_true')
 arg_parser.add_argument("-lr", "--learning-rate", type=float, default=10 ** -4)
-arg_parser.add_argument("-schs", "--scheduler-step", type=int, default=10)
+arg_parser.add_argument("-schs", "--scheduler-step", type=int, default=5)
 arg_parser.add_argument("-schg", "--scheduler-gamma", type=float, default=0.5)
 arg_parser.add_argument("-nw", "--num-workers", type=int, default=4)
 arg_parser.add_argument("-dt", "--dataset-type", type=str, default="fullres")
 arg_parser.add_argument("-n", "--run-name", type=str, default=None)
-arg_parser.add_argument("-sub", "--subsample", type=int, default=False)
+arg_parser.add_argument("-sub", "--subsample", type=float, default=1.0)
 arg_parser.add_argument("-lf", "--loss-func-idx", type=int, default=0)
 arg_parser.add_argument("-fe", "--freeze-encoder", action='store_true')
 args = arg_parser.parse_args()
@@ -66,17 +66,11 @@ if args.run_name:
 results_path = data_path.joinpath(f"logs/{run_id}")
 
 dataset_id = "20220610"
-data_split_ratio = 0.99
 dataset_path = data_path.joinpath(f"processed/dataset-{dataset_id}-{args.dataset_type}")
 current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-dataset = StereopsisDataset(dataset_path)
-if args.subsample:
-    active_samples = args.subsample
-    dataset, _ = torch.utils.data.random_split(dataset, [active_samples, len(dataset) - active_samples])
-train_size = int(data_split_ratio * len(dataset))
-val_size = len(dataset) - train_size
-train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
+dataset = StereopsisDataset(dataset_path, val_split_ratio=0.01, subsample_ratio=args.subsample)
+torch.save(dataset, results_path.joinpath("dataset.pt"))
 
 loss_fns = [MultilayerSmoothL1(), MultilayerSmoothL1viaPool()]
 loss_fn = loss_fns[args.loss_func_idx]
@@ -87,11 +81,13 @@ writer = SummaryWriter(results_path)
 report = generate_report()
 writer.add_text(run_id, report)
 writer.flush()
-print(report)
-start_time = time.time()
-del args.dataset_type, args.run_name, args.subsample, args.loss_func_idx
 
-trainer(model_name=model_name, train_dataset=train_dataset, validation_dataset=val_dataset, loss_fn=loss_fn,
+
+print(report)
+del args.dataset_type, args.run_name, args.subsample, args.loss_func_idx
+start_time = time.time()
+
+trainer(model_name=model_name, dataset=dataset, loss_fn=loss_fn,
         accuracy_fn=accuracy_fn, current_device=current_device, writer=writer, **vars(args))
 
 print(f"Finished training in {time.time() - start_time}!")

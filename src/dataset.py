@@ -4,7 +4,7 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 from cv2 import cv2
 
 project_path = Path(__file__).joinpath("../..").resolve()
@@ -12,12 +12,15 @@ data_path = project_path.joinpath('data')
 
 
 class StereopsisDataset(Dataset):
-    def __init__(self, img_dir):
+    def __init__(self, img_dir, val_split_ratio=0.01, subsample_ratio=1.0):
         self.img_dir = img_dir
         self.timestamp_list = np.array(sorted([int(x.stem[3:]) for x in self.img_dir.glob("sl*")]))
+        self.len = len(list(self.img_dir.glob("sl*")))
+        self.subsample_ratio = subsample_ratio
+        self.train_idx, self.val_idx = self.split_validation(val_split_ratio)
 
     def __len__(self):
-        return len(list(self.img_dir.glob("sl*")))
+        return self.len
 
     def ts_to_index(self, ts):
         return np.where(np.equal(self.timestamp_list, ts))[0][0]
@@ -28,6 +31,17 @@ class StereopsisDataset(Dataset):
         image_r = cv2.cvtColor(cv2.imread(self.img_dir.joinpath(f"sr_{ts}.tiff").as_posix()), cv2.COLOR_BGR2RGB)
         label = cv2.imread(self.img_dir.joinpath(f"dp_{ts}.tiff").as_posix(), flags=cv2.IMREAD_UNCHANGED)
         return np.concatenate([image_l, image_r], axis=2).transpose((2, 0, 1)), label
+
+    def split_validation(self, ratio):
+        np.random.shuffle(dataset_idx := list(range(self.len)))
+        split_idx = int(np.floor(ratio * self.len * self.subsample_ratio))
+        return dataset_idx[split_idx:], dataset_idx[:split_idx]
+
+    def create_loaders(self, batch_size=16, num_workers=4):
+        return DataLoader(self, batch_size=batch_size, sampler=SubsetRandomSampler(self.train_idx),
+                          num_workers=num_workers), \
+               DataLoader(self, batch_size=batch_size, sampler=SubsetRandomSampler(self.val_idx),
+                          num_workers=num_workers)
 
 
 def imshow(inp, title=None):
@@ -73,8 +87,8 @@ def show_images(imgs, titles=(), row_count=1, col_count=None, main_title=None, c
 if __name__ == "__main__":
     data_path = data_path.joinpath("processed/dataset-20220610-fullres/")
 
-    dataset = StereopsisDataset(data_path)
-    dataloader = DataLoader(dataset, batch_size=16, shuffle=True)
+    ds = StereopsisDataset(data_path)
+    dataloader = DataLoader(ds, batch_size=16, shuffle=True)
 
     train_features, train_labels = next(iter(dataloader))
 

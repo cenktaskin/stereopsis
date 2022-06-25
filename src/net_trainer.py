@@ -3,21 +3,18 @@ from tqdm import tqdm
 from importlib import import_module
 
 import torch
-from torch.utils.data import DataLoader
 
 from pretrained_weights import fetch_pretrained_dispnet_weights
 
 
-def trainer(model_name, train_dataset, validation_dataset, loss_fn, accuracy_fn, current_device, writer, epochs,
+def trainer(model_name, dataset, loss_fn, accuracy_fn, current_device, writer, epochs,
             batch_size, batch_norm, not_pretrained, learning_rate, scheduler_step, scheduler_gamma, num_workers,
             freeze_encoder):
-    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    val_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    train_dataloader, val_dataloader = dataset.create_loaders(batch_size=batch_size, num_workers=num_workers)
     train_batch_count = len(train_dataloader)
     val_batch_count = len(val_dataloader)
 
-    results_path = Path(writer.log_dir)
-    torch.save(val_dataloader, results_path.joinpath("val_loader.pt"))
+    results_path = Path(writer.log_dir)  # can be refactored, if the midway model is not saved in the func
 
     model_net = getattr(import_module(f"models.{model_name}"), "NNModel")
     model = model_net(batch_norm)
@@ -27,7 +24,6 @@ def trainer(model_name, train_dataset, validation_dataset, loss_fn, accuracy_fn,
         if freeze_encoder:
             model.encoder.requires_grad_(False)
     model = model.to(current_device)
-    # print(sum(p.numel() for p in model.parameters() if p.requires_grad))
 
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step, gamma=scheduler_gamma)
@@ -78,11 +74,12 @@ def trainer(model_name, train_dataset, validation_dataset, loss_fn, accuracy_fn,
             writer.add_scalars('Error/epoch', {'Training': avg_train_epe, 'Validation': avg_val_epe}, i)
             writer.flush()
 
+        # the model saving can be refactored into a return and outside the train one
         if i % each_round == each_round - 1:
-            optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step, gamma=scheduler_gamma)
-
-        if i == (epochs // 2):
-            torch.save(model.state_dict(), results_path.joinpath(f"model-e{i}.pt"))
-
-    torch.save(model.state_dict(), results_path.joinpath(f"model-e{epochs}.pt"))
+            if i == epochs - 1:  # end of training
+                torch.save(model.state_dict(), results_path.joinpath(f"model-e{epochs}.pt"))
+            else:  # end of a round
+                optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+                scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step, gamma=scheduler_gamma)
+                if i == (epochs // 2) - 1:
+                    torch.save(model.state_dict(), results_path.joinpath(f"model-e{i + 1}.pt"))
