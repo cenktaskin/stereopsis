@@ -70,6 +70,7 @@ def show_images(imgs, titles=(), row_count=1, col_count=None, main_title=None, c
     fig, axs = plt.subplots(row_count, col_count)
     mng = plt.get_current_fig_manager()
     for i, img in enumerate(imgs):
+        img = img.squeeze()
         plt.subplot(row_count, col_count, i + 1)
         if torch.is_tensor(img):  # tensor to numpy
             img = img.numpy()

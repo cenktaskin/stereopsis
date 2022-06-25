@@ -2,14 +2,15 @@ import argparse
 import torch
 import numpy as np
 
+
 from net_tester import tester
 from dataset import data_path, StereopsisDataset
+from models.dispnet import NNModel
 
 arg_parser = argparse.ArgumentParser(description="NN Evaluator")
 arg_parser.add_argument("-r", "--run-name", type=str)
-arg_parser.add_argument("-chdt", "--choose-dataset", action='store_true')
 arg_parser.add_argument("-chw", "--choose-weights", action='store_true')
-arg_parser.add_argument("-o", "--old-type-idx", action='store_true')
+arg_parser.add_argument("-bn", "--batch-norm", type=bool, default=True)
 args = arg_parser.parse_args()
 
 
@@ -36,13 +37,6 @@ else:
         print("More than one matching run found, choose one:")
     log_path = offer_choices(possible_runs)
 
-possible_sets = list(log_path.parent.parent.glob(f"processed/dataset-*"))
-if not args.choose_dataset:
-    dataset_path = possible_sets[-1]
-else:
-    print(f"Choose a dataset:")
-    dataset_path = offer_choices(possible_sets)
-
 possible_weights = list(log_path.glob("model*.pt"))
 if len(possible_weights) == 0:
     weight_path = None
@@ -56,16 +50,13 @@ else:
         print("More than one weight file is found, choose one:")
         weight_path = offer_choices(possible_weights)
 
-val_loader_idx = torch.load(log_path.joinpath("val_loader.pt"))
-print(val_loader_idx)
-# val_loader_idx.dataset = StereopsisDataset(dataset_path)
-# for j, (x, y) in enumerate(val_loader_idx):
-#    print(j)
-# exit()
-# .dataset.indices
-if args.old_type_idx:
-    val_loader_idx = np.loadtxt(log_path.joinpath("validation_indices.txt")).astype(int)
+current_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-dataset = StereopsisDataset(dataset_path)
+dataset = torch.load(log_path.joinpath("dataset.pt"))
+dataset.assert_img_dir()
 
-tester(weight_path, dataset, val_loader_idx)
+model = NNModel(batch_norm=args.batch_norm)
+model_weights = torch.load(weight_path, map_location=current_device)
+model.load_state_dict(model_weights)
+
+tester(model, dataset, weight_path.name)
