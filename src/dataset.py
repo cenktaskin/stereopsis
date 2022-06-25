@@ -7,7 +7,7 @@ import torch
 from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 from cv2 import cv2
 
-project_path = Path(__file__).joinpath("../..").resolve()
+project_path = Path.home().joinpath("git/stereopsis").resolve()
 data_path = project_path.joinpath('data')
 
 
@@ -33,15 +33,22 @@ class StereopsisDataset(Dataset):
         return np.concatenate([image_l, image_r], axis=2).transpose((2, 0, 1)), label
 
     def split_validation(self, ratio):
+        active_samples = int(self.len * self.subsample_ratio)
+        print(f"{active_samples=}")
         np.random.shuffle(dataset_idx := list(range(self.len)))
-        split_idx = int(np.floor(ratio * self.len * self.subsample_ratio))
-        return dataset_idx[split_idx:], dataset_idx[:split_idx]
+        split_idx = int(ratio * active_samples)
+        return dataset_idx[split_idx:active_samples], dataset_idx[:split_idx]
 
     def create_loaders(self, batch_size=16, num_workers=4):
         return DataLoader(self, batch_size=batch_size, sampler=SubsetRandomSampler(self.train_idx),
                           num_workers=num_workers), \
                DataLoader(self, batch_size=batch_size, sampler=SubsetRandomSampler(self.val_idx),
                           num_workers=num_workers)
+
+    def assert_img_dir(self):
+        if not self.img_dir.exists():
+            from_home = self.img_dir.relative_to("/home/Taskin/")
+            self.img_dir = Path.home().joinpath(from_home)
 
 
 def imshow(inp, title=None):
