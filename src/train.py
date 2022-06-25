@@ -93,7 +93,7 @@ print(report)
 start_time = time.time()
 
 trainer(model=model, dataset=dataset, loss_fn=loss_fn, accuracy_fn=accuracy_fn, writer=writer, epochs=args.epochs,
-        batch_size=args.batch_size, learning_rate=args.laerning_rate, scheduler_step=args.scheduler_step,
+        batch_size=args.batch_size, learning_rate=args.learning_rate, scheduler_step=args.scheduler_step,
         scheduler_gamma=args.scheduler_gamma, num_workers=args.num_workers)
 
 print(f"Finished training in {time.time() - start_time}!")
