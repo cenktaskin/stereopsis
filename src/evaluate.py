@@ -30,7 +30,7 @@ if len(possible_runs) == 1:
 else:
     if len(possible_runs) == 0:
         print("No matching run found, checking parent dir:")
-        possible_runs = list(data_path.joinpath("logs").glob("*"))
+        possible_runs = sorted(list(data_path.joinpath("logs").glob("*")))
     else:
         print("More than one matching run found, choose one:")
     log_path = offer_choices(possible_runs)
