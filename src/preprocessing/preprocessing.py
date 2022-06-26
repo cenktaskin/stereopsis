@@ -2,6 +2,7 @@ import cv2
 from data_io import CalibrationDataHandler, MultipleDirDataHandler, data_path
 import pickle
 import numpy as np
+from scipy import interpolate
 
 
 class ImageResizer:
@@ -62,17 +63,20 @@ class ImageResizer:
 class Preprocessor:
     target_res = (384, 768)
 
-    def __init__(self, calibration_data_id, raw_datasets, dataset_name=None):
+    def __init__(self, calibration_data_id, raw_datasets):
         self.calibration_data = CalibrationDataHandler(calibration_data_id)
-        self.data_handler = MultipleDirDataHandler(raw_datasets, ("st", "st", "dp"))
-        if not dataset_name:
-            self.output_name = dataset_name
-            self.output_path = data_path.joinpath(f"processed/dataset-{dataset_name}")
-            if not self.output_path.exists():
-                self.output_path.mkdir()
+        self.data_handler = MultipleDirDataHandler([f"raw/rawdata-{d}" for d in raw_datasets], ("st", "st", "dp"))
+        self.output_name = None
+        self.output_path = None
 
     def __len__(self):
         return len(self.data_handler)
+
+    def set_output_path(self, dataset_name):
+        self.output_name = dataset_name
+        self.output_path = data_path.joinpath(f"processed/dataset-{dataset_name}")
+        if not self.output_path.exists():
+            self.output_path.mkdir()
 
     def rectify_pair(self, img0, img1, cam0_idx, cam1_idx):
         mapx0, mapy0, mapx1, mapy1 = self.calibration_data.load_camera_info(cam1_idx,
@@ -116,8 +120,8 @@ class Preprocessor:
             pickle.dump(stats, f)
 
     def undistort(self, img, cam_idx):
-        map = self.calibration_data.load_camera_info(cam_idx, 'undistortion-map')
-        return cv2.remap(img, map, interpolation=cv2.INTER_CUBIC)
+        maps = self.calibration_data.load_camera_info(cam_idx, 'undistortion-map')
+        return cv2.remap(img, *maps, interpolation=cv2.INTER_CUBIC)
 
     def rectify(self, img0, img1, cam0_idx, cam1_idx):
         maps0, maps1 = self.calibration_data.load_camera_info(cam1_idx, f'rectification-map-wrt-cam{cam0_idx}')
@@ -152,15 +156,78 @@ class Preprocessor:
             if save_results:
                 self.save_processed_imgs(final, ts)
 
+    def register_depth(self, img, intrinsics0, intrinsics1, trans_mat, target_shape):
+        depth_in_mm = img * 1000
+        depth_in_mm[depth_in_mm == 0] = np.nan
+
+        sparse_depth = cv2.rgbd.registerDepth(unregisteredCameraMatrix=intrinsics1['intrinsic_matrix'],
+                                              registeredCameraMatrix=intrinsics0['intrinsic_matrix'],
+                                              registeredDistCoeffs=intrinsics0['distortion_coeffs'],
+                                              Rt=trans_mat,
+                                              unregisteredDepth=depth_in_mm,
+                                              outputImagePlaneSize=target_shape)
+
+        dense_depth = interpolate_missing_pixels(sparse_depth, np.isnan(sparse_depth), 'linear')
+        return np.nan_to_num(dense_depth)
+
+    def register_dataset(self, save_results):
+        cam0_idx = 1
+        cam1_idx = 2
+        intrinsics0 = self.calibration_data.load_camera_info(cam0_idx, 'intrinsics')
+        intrinsics1 = self.calibration_data.load_camera_info(cam1_idx, 'intrinsics')
+        extrinsics = self.calibration_data.load_camera_info(cam1_idx, f'extrinsics-wrt-cam{cam0_idx}')
+        transformation_matrix = form_homogenous_matrix(extrinsics['rotation_matrix'], extrinsics['translation_vector'])
+
+        sample_resizer = ImageResizer(self.target_res)
+        label_resizer = ImageResizer(self.target_res)
+
+        for ts, raw_st, raw_depth in self.data_handler.iterate_over_imgs():
+            raw_left, raw_right = self.calibration_data.parse_stereo_img(raw_st)
+            registered_depth = self.register_depth(raw_depth, intrinsics0, intrinsics1, transformation_matrix,
+                                                   raw_left.shape[:2][::-1])
+            final = [sample_resizer(i) for i in [raw_left, raw_right]] + [label_resizer(registered_depth)]
+            if save_results:
+                self.save_processed_imgs(final, ts)
+
+
+def interpolate_missing_pixels(image, mask, method='linear', fill_value=0):
+    """
+    from https://stackoverflow.com/a/68558547
+    """
+    h, w = image.shape[:2]
+    xx, yy = np.meshgrid(np.arange(w), np.arange(h))
+    interp_values = interpolate.griddata((xx[~mask], yy[~mask]), image[~mask], (xx[mask], yy[mask]), method, fill_value)
+    interp_image = image.copy()
+    interp_image[yy[mask], xx[mask]] = interp_values
+
+    return interp_image
+
+
+def form_homogenous_matrix(rot, tra):
+    transformation_matrix = np.eye(4)
+    transformation_matrix[:-1] = np.hstack([rot, tra])
+    return transformation_matrix
+
 
 if __name__ == "__main__":
     preprocessor = Preprocessor(calibration_data_id="20220610",
-                                raw_datasets=["202206101932", "202206101937", "202206101612"],
-                                dataset_name="20220610-undistorted")
+                                raw_datasets=["202206101932", "202206101937", "202206101612"])
 
-    preprocessor.undistort_dataset(save_results=False)
+    simple_process = 0
+    if simple_process:
+        preprocessor.set_output_path("20220610-fullres")
+        preprocessor.crop_the_dataset(save_result=False)
 
-    rectifier = Preprocessor(calibration_data_id="20220610",
-                             raw_datasets=["202206101932", "202206101937", "202206101612"],
-                             dataset_name="20220610-rectified")
-    #rectifier.rectify_dataset(cam0_idx=1, cam1_idx=0, save_results=False)
+    undistortion = 0
+    if undistortion:
+        preprocessor.set_output_path("20220610-undistorted")
+        preprocessor.undistort_dataset(save_results=False)
+
+    rectify = 0
+    if rectify:
+        preprocessor.set_output_path("20220610-rectified")
+
+    register = 1
+    if register:
+        preprocessor.set_output_path("20220610-registered")
+        preprocessor.register_dataset(save_results=True)
