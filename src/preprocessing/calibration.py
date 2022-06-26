@@ -87,7 +87,7 @@ class Calibrator:
                                                  distCoeffs=intrinsics['distortion_coeffs'],
                                                  R=None,
                                                  newCameraMatrix=new_cam_mtx,
-                                                 size=intrinsics['image_size'],
+                                                 size=intrinsics['image_size'][::-1],
                                                  m1type=cv2.CV_32FC1)
 
         print(f"Computed undistortion maps for cam{cam_idx}.")
@@ -104,6 +104,10 @@ class Calibrator:
         common_ts = corners0.keys() & corners1.keys()
         print(f"Calibrating extrinsics for cam{cam1_idx} wrt cam{cam0_idx} with {len(common_ts)} frames...")
 
+        flags = cv2.CALIB_RATIONAL_MODEL + cv2.CALIB_SAME_FOCAL_LENGTH
+        if cam1_idx == 2:
+            flags = cv2.CALIB_RATIONAL_MODEL + cv2.CALIB_FIX_INTRINSIC
+
         start_time = time.time()
         result = cv2.stereoCalibrate(objectPoints=np.tile(self.board, (len(common_ts), 1, 1)),
                                      imagePoints1=[corners0[ts] for ts in common_ts],
@@ -113,7 +117,7 @@ class Calibrator:
                                      distCoeffs1=intrinsics0['distortion_coeffs'],
                                      distCoeffs2=intrinsics1['distortion_coeffs'],
                                      imageSize=intrinsics0['image_size'],
-                                     flags=cv2.CALIB_RATIONAL_MODEL + cv2.CALIB_SAME_FOCAL_LENGTH)
+                                     flags=flags)
 
         duration = time.time() - start_time
         extrinsics = {x: result[i] for i, x in enumerate(self.extrinsics_keys)}
@@ -194,12 +198,12 @@ if __name__ == "__main__":
 
     extrinsic_calibration = 0
     if extrinsic_calibration:
-        calibrator.compute_extrinsics(cam0_idx=1, cam1_idx=0, save_results=False)
+        calibrator.compute_extrinsics(cam0_idx=1, cam1_idx=2, save_results=False)
 
     rectification = 0
     if rectification:
         calibrator.compute_rectification(cam0_idx=1, cam1_idx=0, save_results=False)
 
-    rectification_map = 1
+    rectification_map = 0
     if rectification_map:
         calibrator.compute_rectification_maps(cam0_idx=1, cam1_idx=0, save_results=True)
