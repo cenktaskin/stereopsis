@@ -69,11 +69,11 @@ class CalibrationDataHandler(RawDataHandler):
 
 
 class MultipleDirDataHandler:
-    def __init__(self, datasets, prefixes):
-        if isinstance(datasets,str):
-            datasets = [datasets]
-        self.data_dirs = [data_path.joinpath(f"raw/rawdata-{d}") for d in datasets]
-        self.data_handlers = [RawDataHandler(d, prefixes) for d in self.data_dirs]
+    def __init__(self, data_dir, prefixes):
+        if isinstance(data_dir,str):
+            data_dir = [data_dir]
+        self.data_dir = [data_path.joinpath(f"raw/rawdata-{d}") for d in data_dir]
+        self.data_handlers = [RawDataHandler(d, prefixes) for d in self.data_dir]
 
     def __len__(self):
         return sum([len(a) for a in self.data_handlers])
