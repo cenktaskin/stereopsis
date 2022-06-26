@@ -1,10 +1,8 @@
 import argparse
 import torch
-import numpy as np
-
 
 from net_tester import tester
-from dataset import data_path, StereopsisDataset
+from dataset import data_path
 from models.dispnet import NNModel
 
 arg_parser = argparse.ArgumentParser(description="NN Evaluator")
