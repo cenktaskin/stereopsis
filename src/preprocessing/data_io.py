@@ -70,13 +70,29 @@ class CalibrationDataHandler(RawDataHandler):
 
 class MultipleDirDataHandler:
     def __init__(self, data_dir, prefixes):
-        if isinstance(data_dir,str):
+        if isinstance(data_dir, str):
             data_dir = [data_dir]
-        self.data_dir = [data_path.joinpath(f"raw/rawdata-{d}") for d in data_dir]
+        self.data_dir = [data_path.joinpath(d) for d in data_dir]
         self.data_handlers = [RawDataHandler(d, prefixes) for d in self.data_dir]
 
     def __len__(self):
         return sum([len(a) for a in self.data_handlers])
+
+    def get_img(self, *args):
+        return self.data_handlers[0].get_img(*args)
+
+    def get_img_size(self, *args):
+        return self.data_handlers[0].get_img_size(*args)
+
+    def get_random_ts(self):
+        return self.data_handlers[0].get_random_ts()
+
+    def get_random_img(self, *args):
+        return self.data_handlers[0].get_random_img(*args)
+
+    @staticmethod
+    def parse_stereo_img(self, *args):
+        return self.data_handlers[0].parse_stereo_img(*args)
 
     def iterate_over_imgs(self):
         with tqdm(total=self.__len__()) as pbar:
