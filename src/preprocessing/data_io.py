@@ -1,15 +1,16 @@
 from pathlib import Path
-from cv2 import cv2
+import cv2
 import numpy as np
 import pickle
+from tqdm import tqdm
+
+project_path = Path(__file__).joinpath("../../..").resolve()
+data_path = project_path.joinpath('data')
 
 
 class RawDataHandler:
-    project_path = Path(__file__).joinpath("../../..").resolve()
-    data_path = project_path.joinpath('data')
-
     def __init__(self, data_dir, prefixes):
-        self.data_dir = self.data_path.joinpath(data_dir)
+        self.data_dir = data_path.joinpath(data_dir)
         self.prefixes = prefixes
         self.ts_list = np.array([int(a.stem[3:]) for a in self.data_dir.glob(f'{self.prefixes[0]}*')])
 
@@ -43,7 +44,7 @@ class RawDataHandler:
 class CalibrationDataHandler(RawDataHandler):
     def __init__(self, data_id):
         super(CalibrationDataHandler, self).__init__(f"raw/calibration-{data_id}", ("st", "st", "ir"))
-        self.processed_dir = self.data_path.joinpath("processed", f"calibration-results-{data_id}")
+        self.processed_dir = data_path.joinpath("processed", f"calibration-results-{data_id}")
         if not self.processed_dir.exists():
             self.processed_dir.mkdir()
         self.frame_reviewer = FrameReviewer()
@@ -65,6 +66,27 @@ class CalibrationDataHandler(RawDataHandler):
         if cam_idx == 2:
             win_scale = 7
         return self.frame_reviewer(fr, win_scale, verbose)
+
+
+class MultipleDirDataHandler:
+    def __init__(self, datasets, prefixes):
+        if isinstance(datasets,str):
+            datasets = [datasets]
+        self.data_dirs = [data_path.joinpath(f"raw/rawdata-{d}") for d in datasets]
+        self.data_handlers = [RawDataHandler(d, prefixes) for d in self.data_dirs]
+
+    def __len__(self):
+        return sum([len(a) for a in self.data_handlers])
+
+    def iterate_over_imgs(self):
+        with tqdm(total=self.__len__()) as pbar:
+            for dh in self.data_handlers:
+                for ts, st, d in dh.iterate_over_imgs():
+                    if not st.any():
+                        pbar.update(1)
+                        continue
+                    yield ts, st, d
+                    pbar.update(1)
 
 
 class FrameReviewer:
