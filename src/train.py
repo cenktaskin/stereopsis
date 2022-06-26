@@ -56,7 +56,7 @@ arg_parser.add_argument("-np", "--not-pretrained", action='store_true')
 arg_parser.add_argument("-dt", "--dataset-type", type=str, default="fullres")
 arg_parser.add_argument("-n", "--run-name", type=str, default=None)
 arg_parser.add_argument("-sub", "--subsample", type=float, default=1.0)
-arg_parser.add_argument("-lf", "--loss-func-idx", type=int, default=0)
+arg_parser.add_argument("-lf", "--loss-func-idx", type=int, default=1)
 arg_parser.add_argument("-fe", "--freeze-encoder", action='store_true')
 args = arg_parser.parse_args()
 

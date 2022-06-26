@@ -6,7 +6,7 @@ from dataset import show_images
 from loss import MaskedEPE, MultilayerSmoothL1viaPool, MultilayerSmoothL1
 
 
-def tester(model, dataset, weights_name):
+def tester(model, dataset, run_name, weights_name):
     _, val_loader = dataset.create_loaders(batch_size=1)
 
     acc_fn = MaskedEPE()
@@ -21,4 +21,4 @@ def tester(model, dataset, weights_name):
             tit = ["left_img", "right_img", "label", "pred"]
             pred = interpolate(y_hat[-1], size=y.shape[-2:], mode="bilinear")
             show_images([*np.split(x.squeeze(), 2, axis=0), y, pred], titles=tit, row_count=2,
-                        main_title=f"{weights_name} \n Loss:{loss:.4f}, EPE:{accuracy:.4f}")
+                        main_title=f"{run_name}-{weights_name} \n Loss:{loss:.4f}, EPE:{accuracy:.4f}")
