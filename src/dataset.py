@@ -34,7 +34,6 @@ class StereopsisDataset(Dataset):
 
     def split_validation(self, ratio):
         active_samples = int(self.len * self.subsample_ratio)
-        print(f"{active_samples=}")
         np.random.shuffle(dataset_idx := list(range(self.len)))
         split_idx = int(ratio * active_samples)
         return dataset_idx[split_idx:active_samples], dataset_idx[:split_idx]
