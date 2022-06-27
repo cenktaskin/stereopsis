@@ -1,5 +1,5 @@
 import cv2
-from data_io import CalibrationDataHandler, MultipleDirDataHandler, data_path
+from data_io import CalibrationDataHandler, MultipleDirDataHandler, data_path, show_images
 import pickle
 import numpy as np
 from scipy import interpolate
@@ -86,7 +86,9 @@ class Preprocessor:
             if save_results:
                 self.save_processed_imgs(final, ts)
 
-    def rectify_dataset(self, cam0_idx, cam1_idx, save_results=False):
+    def rectify_dataset(self, save_results=False):
+        cam0_idx = 1
+        cam1_idx = 0
         maps0, maps1 = self.calibration_data.load_camera_info(cam1_idx, f'rectification-map-wrt-cam{cam0_idx}')
         map_label = self.calibration_data.load_camera_info(2, 'undistortion-map')
         maps = {cam0_idx: maps0, cam1_idx: maps1, 2: map_label}
@@ -131,6 +133,27 @@ class Preprocessor:
             registered_depth = self.register_depth(raw_depth, intrinsics0, intrinsics1, transformation_matrix,
                                                    raw_left.shape[:2][::-1])
             final = [resizer(i) for i in [raw_left, raw_right, registered_depth]]
+            if save_results:
+                self.save_processed_imgs(final, ts)
+
+    def register_and_rectify_dataset(self, save_results):
+        intrinsics1 = self.calibration_data.load_camera_info(1, 'intrinsics')
+        intrinsics2 = self.calibration_data.load_camera_info(2, 'intrinsics')
+        extrinsics = self.calibration_data.load_camera_info(2, f'extrinsics-wrt-cam{1}')
+        transformation_matrix = form_homogenous_matrix(extrinsics['rotation_matrix'], extrinsics['translation_vector'])
+        maps1, maps0 = self.calibration_data.load_camera_info(0, f'rectification-map-wrt-cam{1}')
+
+        maps = [maps0, maps1, maps1]
+        resizer = ImageResizer(self.target_res)
+
+        for ts, raw_st, raw_depth in self.data_handler.iterate_over_imgs():
+            raw_left, raw_right = self.calibration_data.parse_stereo_img(raw_st)
+            registered2 = self.register_depth(raw_depth, intrinsics1, intrinsics2, transformation_matrix,
+                                              raw_left.shape[:2][::-1])
+            final = []
+            for i, img in enumerate([raw_left, raw_right, registered2]):
+                final.append(resizer(cv2.remap(img, *maps[i], interpolation=cv2.INTER_CUBIC)[:640]))
+
             if save_results:
                 self.save_processed_imgs(final, ts)
 
@@ -226,8 +249,14 @@ if __name__ == "__main__":
     rectify = 0
     if rectify:
         preprocessor.set_output_path("20220610-rectified")
+        preprocessor.rectify_dataset(save_results=False)
 
-    register = 1
+    register = 0
     if register:
         preprocessor.set_output_path("20220610-registered")
-        preprocessor.register_dataset(save_results=True)
+        preprocessor.register_dataset(save_results=False)
+
+    register_and_register = 1
+    if register_and_register:
+        preprocessor.set_output_path("20220610-registered-and-rectified")
+        preprocessor.register_and_rectify_dataset(save_results=True)
