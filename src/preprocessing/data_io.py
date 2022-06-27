@@ -1,8 +1,12 @@
 from pathlib import Path
-import cv2
-import numpy as np
+import math
 import pickle
+
+import numpy as np
+import cv2
+import matplotlib.pyplot as plt
 from tqdm import tqdm
+from torch import is_tensor
 
 project_path = Path(__file__).joinpath("../../..").resolve()
 data_path = project_path.joinpath('data')
@@ -134,6 +138,34 @@ class FrameReviewer:
             return False
         elif key_press == self.quit_key:
             exit()
+
+
+def show_images(imgs, titles=(), row_count=1, col_count=None, main_title=None, contains_bgr=False):
+    if not col_count:
+        col_count = math.ceil(len(imgs) / row_count)
+    fig, axs = plt.subplots(row_count, col_count)
+    mng = plt.get_current_fig_manager()
+    for i, img in enumerate(imgs):
+        img = img.squeeze()
+        plt.subplot(row_count, col_count, i + 1)
+        if is_tensor(img):  # tensor to numpy
+            img = img.numpy()
+        if len(img) == 3:  # in C x H x W order
+            img = img.transpose((1, 2, 0))
+        if contains_bgr and img.ndim > 2:  # bgr -> rgb
+            img = img[:, :, ::-1]
+        try:
+            plt.title(f"{titles[i]}")
+        except:
+            pass
+        plt.imshow(img, interpolation=None)
+    mng.resize(*mng.window.maxsize())
+    if main_title:
+        fig.suptitle(main_title)
+    fig.show()
+    while not plt.waitforbuttonpress():
+        pass
+    plt.close(fig)
 
 
 if __name__ == "__main__":

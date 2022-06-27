@@ -1,9 +1,6 @@
 from pathlib import Path
-import math
 
 import numpy as np
-import matplotlib.pyplot as plt
-import torch
 from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 from cv2 import cv2
 
@@ -50,48 +47,9 @@ class StereopsisDataset(Dataset):
             self.img_dir = Path.home().joinpath(from_home)
 
 
-def imshow(inp, title=None):
-    """Imshow for Tensor."""
-    inp = inp.numpy().transpose((1, 2, 0))
-    mean = np.array([0.485, 0.456, 0.406])
-    std = np.array([0.229, 0.224, 0.225])
-    inp = std * inp + mean
-    inp = np.clip(inp, 0, 1)
-    plt.imshow(inp)
-    if title is not None:
-        plt.title(title)
-    plt.pause(0.01)  # pause a bit so that plots are updated
-
-
-def show_images(imgs, titles=(), row_count=1, col_count=None, main_title=None, contains_bgr=False):
-    if not col_count:
-        col_count = math.ceil(len(imgs) / row_count)
-    fig, axs = plt.subplots(row_count, col_count)
-    mng = plt.get_current_fig_manager()
-    for i, img in enumerate(imgs):
-        img = img.squeeze()
-        plt.subplot(row_count, col_count, i + 1)
-        if torch.is_tensor(img):  # tensor to numpy
-            img = img.numpy()
-        if len(img) == 3:  # in C x H x W order
-            img = img.transpose((1, 2, 0))
-        if contains_bgr and img.ndim > 2:  # bgr -> rgb
-            img = img[:, :, ::-1]
-        try:
-            plt.title(f"{titles[i]}")
-        except:
-            pass
-        plt.imshow(img, interpolation=None)
-    mng.resize(*mng.window.maxsize())
-    if main_title:
-        fig.suptitle(main_title)
-    fig.show()
-    while not plt.waitforbuttonpress():
-        pass
-    plt.close(fig)
-
-
 if __name__ == "__main__":
+    from preprocessing.data_io import show_images
+
     data_path = data_path.joinpath("processed/dataset-20220610-fullres/")
 
     ds = StereopsisDataset(data_path)
@@ -105,12 +63,5 @@ if __name__ == "__main__":
     x_l, x_r = np.split(train_features[0].squeeze(), 2, axis=0)
     y = train_labels[0]
 
-    plt.subplot(2, 2, 1)
-    plt.title(f"Training sample with type {type(x_l)}, shape {x_l.shape}")
-    imshow(x_l)  # back to np dimension order
-    plt.subplot(2, 2, 2)
-    plt.imshow(x_r.permute(1, 2, 0))
-    plt.subplot(2, 2, 3)
-    plt.title(f"Training sample with type {type(y)}, shape {y.shape}")
-    plt.imshow(y)
-    plt.show()
+    show_images([x_l, x_r, y], titles=[f"Training sample with type {type(x_l)}, shape {x_l.shape}", None,
+                                       f"Training sample with type {type(y)}, shape {y.shape}"], row_count=2)
