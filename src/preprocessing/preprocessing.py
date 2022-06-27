@@ -5,61 +5,6 @@ import numpy as np
 from scipy import interpolate
 
 
-class ImageResizer:
-    """first crops the height to fit the aspect ratio then resizes
-    ->assumes raw image height needs to be cropped, can be done robuster"""
-
-    def __init__(self, target_size, verbose=False):
-        self.initial_h = None
-        self.initial_w = None
-        self.target_shape = target_size
-        self.target_aspect_ratio = self.target_shape[1] / self.target_shape[0]
-        self.h_slice = None
-        self.verbose = verbose
-        self.resize_method = None
-        self.just_resize = False
-
-    def init_raw_size(self, sample):
-        self.initial_h = sample.shape[0]
-        self.initial_w = sample.shape[1]
-        self.calculate_slices()
-        self.define_method()
-
-    def calculate_slices(self):
-        h_crop_target = int(self.initial_w / self.target_aspect_ratio)
-        reduce_h_amount = self.initial_h - h_crop_target
-        if reduce_h_amount == 0:
-            self.just_resize = True
-        self.h_slice = slice(reduce_h_amount // 2, h_crop_target + reduce_h_amount // 2)
-
-    def define_method(self):
-        method = cv2.INTER_AREA
-        if self.initial_h * self.initial_w < self.target_shape[0] * self.target_shape[1]:
-            method = cv2.INTER_LINEAR_EXACT
-        self.resize_method = method
-
-    def crop_img(self, img):
-        res = img[self.h_slice, :]
-        if self.verbose:
-            print(f"Cropped {img.shape} -> {res.shape}")
-        return res
-
-    def resize_img(self, img):
-        res = cv2.resize(img, self.target_shape[::-1], interpolation=self.resize_method)
-        if self.verbose:
-            print(f"Resized {img.shape} -> {res.shape} via method:{self.resize_method}")
-        return res
-
-    def __call__(self, img):
-        if not self.h_slice or not self.resize_method:
-            self.init_raw_size(img)
-        if not self.just_resize:
-            img = self.crop_img(img)
-        if img.shape != self.target_shape:
-            img = self.resize_img(img)
-        return img
-
-
 class Preprocessor:
     target_res = (384, 768)
 
@@ -168,7 +113,8 @@ class Preprocessor:
                                               outputImagePlaneSize=target_shape)
 
         dense_depth = interpolate_missing_pixels(sparse_depth, np.isnan(sparse_depth), 'linear')
-        return np.nan_to_num(dense_depth)
+        dense_depth = np.nan_to_num(dense_depth)
+        return dense_depth / 1000  # to meter
 
     def register_dataset(self, save_results):
         cam0_idx = 1
@@ -178,16 +124,70 @@ class Preprocessor:
         extrinsics = self.calibration_data.load_camera_info(cam1_idx, f'extrinsics-wrt-cam{cam0_idx}')
         transformation_matrix = form_homogenous_matrix(extrinsics['rotation_matrix'], extrinsics['translation_vector'])
 
-        sample_resizer = ImageResizer(self.target_res)
-        label_resizer = ImageResizer(self.target_res)
+        resizer = ImageResizer(self.target_res)
 
         for ts, raw_st, raw_depth in self.data_handler.iterate_over_imgs():
             raw_left, raw_right = self.calibration_data.parse_stereo_img(raw_st)
             registered_depth = self.register_depth(raw_depth, intrinsics0, intrinsics1, transformation_matrix,
                                                    raw_left.shape[:2][::-1])
-            final = [sample_resizer(i) for i in [raw_left, raw_right]] + [label_resizer(registered_depth)]
+            final = [resizer(i) for i in [raw_left, raw_right, registered_depth]]
             if save_results:
                 self.save_processed_imgs(final, ts)
+
+
+class ImageResizer:
+    """first crops the height to fit the aspect ratio then resizes
+    ->assumes raw image height needs to be cropped, can be done robuster"""
+
+    def __init__(self, target_size, verbose=False):
+        self.initial_h = None
+        self.initial_w = None
+        self.target_shape = target_size
+        self.target_aspect_ratio = self.target_shape[1] / self.target_shape[0]
+        self.h_slice = None
+        self.verbose = verbose
+        self.resize_method = None
+        self.just_resize = False
+
+    def init_raw_size(self, sample):
+        self.initial_h = sample.shape[0]
+        self.initial_w = sample.shape[1]
+        self.calculate_slices()
+        self.define_method()
+
+    def calculate_slices(self):
+        h_crop_target = int(self.initial_w / self.target_aspect_ratio)
+        reduce_h_amount = self.initial_h - h_crop_target
+        if reduce_h_amount == 0:
+            self.just_resize = True
+        self.h_slice = slice(reduce_h_amount // 2, h_crop_target + reduce_h_amount // 2)
+
+    def define_method(self):
+        method = cv2.INTER_AREA
+        if self.initial_h * self.initial_w < self.target_shape[0] * self.target_shape[1]:
+            method = cv2.INTER_LINEAR_EXACT
+        self.resize_method = method
+
+    def crop_img(self, img):
+        res = img[self.h_slice, :]
+        if self.verbose:
+            print(f"Cropped {img.shape} -> {res.shape}")
+        return res
+
+    def resize_img(self, img):
+        res = cv2.resize(img, self.target_shape[::-1], interpolation=self.resize_method)
+        if self.verbose:
+            print(f"Resized {img.shape} -> {res.shape} via method:{self.resize_method}")
+        return res
+
+    def __call__(self, img):
+        if not self.h_slice or not self.resize_method:
+            self.init_raw_size(img)
+        if not self.just_resize:
+            img = self.crop_img(img)
+        if img.shape != self.target_shape:
+            img = self.resize_img(img)
+        return img
 
 
 def interpolate_missing_pixels(image, mask, method='linear', fill_value=0):
