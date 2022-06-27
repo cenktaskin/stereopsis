@@ -18,7 +18,7 @@ def trainer(model, dataset, loss_fn, accuracy_fn, writer, epochs, batch_size, le
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step, gamma=scheduler_gamma)
 
-    each_round = epochs // 4
+    each_round = 20
     for i in range(epochs):
         with tqdm(total=train_batch_count, unit="batch", leave=False) as pbar:
             pbar.set_description(f"Epoch [{i:4d}/{epochs:4d}]")
@@ -64,12 +64,8 @@ def trainer(model, dataset, loss_fn, accuracy_fn, writer, epochs, batch_size, le
             writer.add_scalars('Error/epoch', {'Training': avg_train_epe, 'Validation': avg_val_epe}, i)
             writer.flush()
 
-        # the model saving can be refactored into a return and outside the train one
+        # end of a round, save model and refresh optimizer
         if i % each_round == each_round - 1:
-            if i == epochs - 1:  # end of training
-                torch.save(model.state_dict(), results_path.joinpath(f"model-e{epochs}.pt"))
-            else:  # end of a round
-                optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-                scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step, gamma=scheduler_gamma)
-                if i == (epochs // 2) - 1:
-                    torch.save(model.state_dict(), results_path.joinpath(f"model-e{i + 1}.pt"))
+            torch.save(model.state_dict(), results_path.joinpath(f"model-e{i+1}.pt"))
+            optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scheduler_step, gamma=scheduler_gamma)

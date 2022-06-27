@@ -6,10 +6,15 @@ class MultilayerSmoothL1(torch.nn.Module):
     name = "MultilayerSmoothL1"
     # cols are for each loss layer from 6 to 0
     # last line is added by me
-    weights = torch.tensor([[1.0, 1.0, 0.5, 0.0, 0.0, 0.0],
-                            [0.0, 0.5, 1.0, 1.0, 0.5, 0.0],
-                            [0.0, 0.0, 0.0, 0.5, 1.0, 1.0],
-                            [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]], requires_grad=False)
+    old_weights = torch.tensor([[1.0, 1.0, 0.5, 0.0, 0.0, 0.0],
+                                [0.0, 0.5, 1.0, 1.0, 0.5, 0.0],
+                                [0.0, 0.0, 0.0, 0.5, 1.0, 1.0],
+                                [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]], requires_grad=False)
+
+    weights = torch.tensor([[0.005, 0.01, 0.02, 0.04, 0.08, 0.16, 0.32],
+                            [0.005, 0.01, 0.02, 0.04, 0.08, 0.32, 0.6],
+                            [0.0025, 0.005, 0.01, 0.02, 0.04, 0.16, 0.8],
+                            [0., 0., 0., 0., 0., 0., 1.]], requires_grad=False)
 
     def __init__(self):
         super().__init__()
