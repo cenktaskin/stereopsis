@@ -50,10 +50,10 @@ class StereopsisDataset(Dataset):
 if __name__ == "__main__":
     from preprocessing.data_io import show_images
 
-    data_path = data_path.joinpath("processed/dataset-20220610-fullres/")
+    data_path = data_path.joinpath("processed/dataset-20220701-fullres/")
 
     ds = StereopsisDataset(data_path)
-    dataloader = DataLoader(ds, batch_size=16, shuffle=True)
+    dataloader, _ = ds.create_loaders()
 
     train_features, train_labels = next(iter(dataloader))
 
