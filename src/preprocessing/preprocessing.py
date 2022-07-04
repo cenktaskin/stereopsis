@@ -234,29 +234,29 @@ def form_homogenous_matrix(rot, tra):
 
 if __name__ == "__main__":
     preprocessor = Preprocessor(calibration_data_id="20220610",
-                                raw_datasets=["202206101932", "202206101937", "202206101612"])
+                                raw_datasets=["202207011356"])
 
-    simple_process = 0
+    simple_process = 1
     if simple_process:
-        preprocessor.set_output_path("20220610-fullres")
-        preprocessor.crop_the_dataset(save_result=False)
+        preprocessor.set_output_path("20220701-fullres")
+        preprocessor.crop_the_dataset(save_result=True)
 
-    undistortion = 0
+    undistortion = 1
     if undistortion:
-        preprocessor.set_output_path("20220610-undistorted")
-        preprocessor.undistort_dataset(save_results=False)
+        preprocessor.set_output_path("20220701-undistorted")
+        preprocessor.undistort_dataset(save_results=True)
 
-    rectify = 0
+    rectify = 1
     if rectify:
-        preprocessor.set_output_path("20220610-rectified")
-        preprocessor.rectify_dataset(save_results=False)
+        preprocessor.set_output_path("20220701-rectified")
+        preprocessor.rectify_dataset(save_results=True)
 
-    register = 0
+    register = 1
     if register:
-        preprocessor.set_output_path("20220610-registered")
-        preprocessor.register_dataset(save_results=False)
+        preprocessor.set_output_path("20220701-registered")
+        preprocessor.register_dataset(save_results=True)
 
     register_and_register = 1
     if register_and_register:
-        preprocessor.set_output_path("20220610-registered-and-rectified")
+        preprocessor.set_output_path("20220701-registered-and-rectified")
         preprocessor.register_and_rectify_dataset(save_results=True)
