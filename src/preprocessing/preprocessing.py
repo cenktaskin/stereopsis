@@ -1,6 +1,5 @@
 import cv2
-from data_io import CalibrationDataHandler, MultipleDirDataHandler, data_path, show_images
-import pickle
+from data_io import CalibrationDataHandler, MultipleDirDataHandler, data_path
 import numpy as np
 from scipy import interpolate
 
@@ -11,24 +10,15 @@ class Preprocessor:
     def __init__(self, calibration_data_id, raw_datasets):
         self.calibration_data = CalibrationDataHandler(calibration_data_id)
         self.data_handler = MultipleDirDataHandler([f"raw/rawdata-{d}" for d in raw_datasets], ("st", "st", "dp"))
-        self.output_name = None
         self.output_path = None
 
     def __len__(self):
         return len(self.data_handler)
 
-    def set_output_path(self, dataset_name):
-        self.output_name = dataset_name
-        self.output_path = data_path.joinpath(f"processed/dataset-{dataset_name}")
+    def set_output_path(self, new_path):
+        self.output_path = data_path.joinpath(new_path)
         if not self.output_path.exists():
             self.output_path.mkdir()
-
-    def rectify_pair(self, img0, img1, cam0_idx, cam1_idx):
-        mapx0, mapy0, mapx1, mapy1 = self.calibration_data.load_camera_info(cam1_idx,
-                                                                            f'rectification-map-wrt-cam{cam0_idx}')
-        img0_rectified = cv2.remap(img0, mapx0, mapy0, cv2.INTER_CUBIC)
-        img1_rectified = cv2.remap(img1, mapx1, mapy1, cv2.INTER_CUBIC)
-        return img0_rectified, img1_rectified
 
     def save_processed_imgs(self, imgs, ts):
         cv2.imwrite(self.output_path.joinpath(f"sl_{ts}.tiff").as_posix(), imgs[0])
@@ -36,33 +26,17 @@ class Preprocessor:
         cv2.imwrite(self.output_path.joinpath(f"dp_{ts}.tiff").as_posix(), imgs[2])
 
     def crop_the_dataset(self, save_result=False, verbose=False):
-        target_label_res = self.target_res
-        if self.output_name.split("-")[-1] == "origres":
-            target_label_res = (112, 224)
-        sample_resizer = ImageResizer(self.target_res, verbose=verbose)
-        label_resizer = ImageResizer(target_label_res, verbose=verbose)
-
-        stats = np.zeros(14)
+        resizer = ImageResizer(self.target_res, verbose=verbose)
 
         for ts, raw_st, raw_depth in self.data_handler.iterate_over_imgs():
             raw_left, raw_right = np.split(raw_st, 2, axis=1)
 
-            img_left = sample_resizer(raw_left)
-            img_right = sample_resizer(raw_right)
-            img_label = label_resizer(raw_depth)
-
-            stats += np.concatenate(
-                [np.array(cv2.meanStdDev(img_left)).flatten(),
-                 np.array(cv2.meanStdDev(img_right)).flatten(),
-                 np.array(cv2.meanStdDev(img_label)).flatten()])
+            img_left = resizer(raw_left)
+            img_right = resizer(raw_right)
+            img_label = resizer(raw_depth)
 
             if save_result:
                 self.save_processed_imgs([img_left, img_right, img_label], ts)
-
-        stats[:-2] /= 255
-        stats /= self.__len__()
-        with open(self.output_path.joinpath("stats.txt"), "wb") as f:
-            pickle.dump(stats, f)
 
     def undistort(self, img, cam_idx):
         maps = self.calibration_data.load_camera_info(cam_idx, 'undistortion-map')
@@ -236,27 +210,27 @@ if __name__ == "__main__":
     preprocessor = Preprocessor(calibration_data_id="20220610",
                                 raw_datasets=["202207011356"])
 
-    simple_process = 1
+    simple_process = 0
     if simple_process:
-        preprocessor.set_output_path("20220701-fullres")
-        preprocessor.crop_the_dataset(save_result=True)
+        preprocessor.set_output_path("processed/dataset-20220701-fullres")
+        preprocessor.crop_the_dataset(save_result=False)
 
-    undistortion = 1
+    undistortion = 0
     if undistortion:
-        preprocessor.set_output_path("20220701-undistorted")
-        preprocessor.undistort_dataset(save_results=True)
+        preprocessor.set_output_path("processed/dataset-20220701-undistorted")
+        preprocessor.undistort_dataset(save_results=False)
 
-    rectify = 1
+    rectify = 0
     if rectify:
-        preprocessor.set_output_path("20220701-rectified")
-        preprocessor.rectify_dataset(save_results=True)
+        preprocessor.set_output_path("processed/dataset-20220701-rectified")
+        preprocessor.rectify_dataset(save_results=False)
 
-    register = 1
+    register = 0
     if register:
-        preprocessor.set_output_path("20220701-registered")
-        preprocessor.register_dataset(save_results=True)
+        preprocessor.set_output_path("processed/dataset-20220701-registered")
+        preprocessor.register_dataset(save_results=False)
 
-    register_and_register = 1
+    register_and_register = 0
     if register_and_register:
-        preprocessor.set_output_path("20220701-registered-and-rectified")
-        preprocessor.register_and_rectify_dataset(save_results=True)
+        preprocessor.set_output_path("processed/dataset-20220701-registered-and-rectified")
+        preprocessor.register_and_rectify_dataset(save_results=False)
