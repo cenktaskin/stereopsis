@@ -15,7 +15,7 @@ def tester(model, dataset, run_name=None, weights_name=None, view_results=False)
     results = {}
     model.eval()
     with torch.no_grad():
-        for i, (x, y, idx) in enumerate(val_loader):
+        for i, (x, y) in enumerate(val_loader):
             y_hat = model(x.float())
             loss = loss_fn(y_hat, y, stage=-1)
             accuracy = acc_fn(y_hat, y)

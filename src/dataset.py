@@ -27,7 +27,7 @@ class StereopsisDataset(Dataset):
         image_l = cv2.cvtColor(cv2.imread(self.img_dir.joinpath(f"sl_{ts}.tiff").as_posix()), cv2.COLOR_BGR2RGB)
         image_r = cv2.cvtColor(cv2.imread(self.img_dir.joinpath(f"sr_{ts}.tiff").as_posix()), cv2.COLOR_BGR2RGB)
         label = cv2.imread(self.img_dir.joinpath(f"dp_{ts}.tiff").as_posix(), flags=cv2.IMREAD_UNCHANGED)
-        return np.concatenate([image_l, image_r], axis=2).transpose((2, 0, 1)), label, idx
+        return np.concatenate([image_l, image_r], axis=2).transpose((2, 0, 1)), label
 
     def split_validation(self, ratio):
         active_samples = int(self.len * self.subsample_ratio)
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     ds = StereopsisDataset(data_path)
     dataloader, _ = ds.create_loaders()
 
-    train_features, train_labels, idx = next(iter(dataloader))
+    train_features, train_labels= next(iter(dataloader))
 
     print(f"Feature batch shape: {train_features.size()}")
     print(f"Labels batch shape: {train_labels.size()}")
