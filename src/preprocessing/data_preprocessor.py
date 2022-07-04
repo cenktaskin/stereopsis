@@ -204,33 +204,3 @@ def form_homogenous_matrix(rot, tra):
     transformation_matrix = np.eye(4)
     transformation_matrix[:-1] = np.hstack([rot, tra])
     return transformation_matrix
-
-
-if __name__ == "__main__":
-    preprocessor = Preprocessor(calibration_data_id="20220610",
-                                raw_datasets=["202207011356"])
-
-    simple_process = 0
-    if simple_process:
-        preprocessor.set_output_path("processed/dataset-20220701-fullres")
-        preprocessor.crop_the_dataset(save_result=False)
-
-    undistortion = 0
-    if undistortion:
-        preprocessor.set_output_path("processed/dataset-20220701-undistorted")
-        preprocessor.undistort_dataset(save_results=False)
-
-    rectify = 0
-    if rectify:
-        preprocessor.set_output_path("processed/dataset-20220701-rectified")
-        preprocessor.rectify_dataset(save_results=False)
-
-    register = 0
-    if register:
-        preprocessor.set_output_path("processed/dataset-20220701-registered")
-        preprocessor.register_dataset(save_results=False)
-
-    register_and_register = 0
-    if register_and_register:
-        preprocessor.set_output_path("processed/dataset-20220701-registered-and-rectified")
-        preprocessor.register_and_rectify_dataset(save_results=False)
