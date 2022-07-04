@@ -57,4 +57,4 @@ model = NNModel(batch_norm=args.batch_norm)
 model_weights = torch.load(weight_path, map_location=current_device)
 model.load_state_dict(model_weights)
 
-tester(model, dataset, log_path.name, weight_path.name)
+tester(model, dataset, log_path.name, weight_path.name, view_results=True)
