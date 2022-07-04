@@ -110,7 +110,7 @@ class MultipleDirDataHandler:
 
 
 class FrameReviewer:
-    def __init__(self, pos_key=32, neg_key=110, quit_key=113, ):
+    def __init__(self, pos_key=32, neg_key=110, quit_key=113):
         self.pos_key = pos_key
         self.neg_key = neg_key
         self.quit_key = quit_key
@@ -121,7 +121,7 @@ class FrameReviewer:
         cv2.imshow("img", img)
         if win_scale:
             cv2.resizeWindow("img", *(np.array(img.shape)[:2] * win_scale))
-        cv2.moveWindow("img", 0, 0)
+        cv2.moveWindow("img", 500, 0)
         while (key_press := cv2.waitKey() & 0xFF) not in self.valid_keys:
             if verbose:
                 print(f"Wrong key is pressed, probably {chr(key_press)}")
