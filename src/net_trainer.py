@@ -26,7 +26,7 @@ def trainer(model, dataset, loss_fn, accuracy_fn, writer, epochs, batch_size, le
             # Training
             model.train()
             running_train_loss, running_train_epe = 0, 0
-            for j, (x, y) in enumerate(train_dataloader):
+            for j, (x, y, idx) in enumerate(train_dataloader):
                 batch_idx = i * len(train_dataloader) + j + 1
 
                 x, y = x.to(current_device).float(), y.to(current_device).float()
@@ -48,7 +48,7 @@ def trainer(model, dataset, loss_fn, accuracy_fn, writer, epochs, batch_size, le
             model.eval()
             running_val_epe, running_val_loss = 0, 0
             with torch.no_grad():
-                for k, (x, y) in enumerate(val_dataloader):
+                for k, (x, y, idx) in enumerate(val_dataloader):
                     x, y = x.to(current_device).float(), y.to(current_device).float()
                     predictions = model(x)
                     running_val_loss += loss_fn(predictions, y, stage=3).item()

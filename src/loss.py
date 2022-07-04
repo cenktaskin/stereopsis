@@ -96,7 +96,7 @@ if __name__ == "__main__":
     dataset = StereopsisDataset(dataset_path)
     train_dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 
-    sample_x, sample_y = next(iter(train_dataloader))
+    sample_x, sample_y, idx = next(iter(train_dataloader))
 
     initial_size = torch.tensor([6, 12])
     pr_list = tuple([torch.randn(batch_size, 1, *initial_size * 2 ** i) for i in range(6)])
