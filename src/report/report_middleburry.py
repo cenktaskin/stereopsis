@@ -1,12 +1,13 @@
 import numpy as np
 from report_model_comparison import runs
-from preprocessing.data_io import data_path
-from preprocessing.data_preprocessor import ImageResizer
+from src.preprocessing.data_io import data_path
+from src.preprocessing.data_preprocessor import ImageResizer
 import re
 import torch
 from torch.nn.functional import interpolate
 from src.models.dispnet import NNModel
 import cv2
+from src.loss import MaskedEPE, MultilayerSmoothL1viaPool
 
 
 # from https://lmb.informatik.uni-freiburg.de/resources/datasets/IO.py
@@ -70,6 +71,9 @@ x = np.concatenate([image_l, image_r], axis=2).transpose((2, 0, 1))
 x = torch.from_numpy(x).unsqueeze(dim=0)
 y = torch.from_numpy(label)
 
+acc_fn = MaskedEPE()
+loss_fn = MultilayerSmoothL1viaPool()
+print(loss_fn.multiScales)
 for run in runs:
     log = data_path.joinpath(f"logs/{runs[run]}")
     model_weights = torch.load(log.joinpath(f"model-e200.pt"), map_location=current_device)
@@ -78,5 +82,12 @@ for run in runs:
     model.eval()
     with torch.no_grad():
         y_hat = model(x.float())
-        pred = interpolate(y_hat[-1], size=y.shape[-2:], mode="bilinear").squeeze().numpy()
-        cv2.imwrite(data_path.joinpath(f"processed/report-imgs/mbury/pred_{run}.tiff").as_posix(), pred)
+        # pred = interpolate(y_hat[-1], size=y.shape[-2:], mode="bilinear").squeeze().numpy()
+        # cv2.imwrite(data_path.joinpath(f"processed/report-imgs/mbury/pred_{run}.tiff").as_posix(), pred)
+        print(type(y_hat[-1]))
+        print(y_hat[-1].shape)
+        loss = loss_fn(y_hat, y.unsqueeze(dim=0), stage=-1)
+        accuracy = acc_fn(y_hat, y.unsqueeze(dim=0))
+        print(run)
+        print(loss)
+        print(accuracy)
