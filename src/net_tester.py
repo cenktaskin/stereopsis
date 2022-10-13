@@ -2,8 +2,8 @@ import numpy as np
 import torch
 from torch.nn.functional import interpolate
 
-from preprocessing.data_io import show_images
-from loss import MaskedEPE, MultilayerSmoothL1viaPool, MultilayerSmoothL1
+from src.preprocessing.data_io import show_images
+from src.loss import MaskedEPE, MultilayerSmoothL1viaPool, MultilayerSmoothL1
 
 
 def tester(model, dataset, run_name=None, weights_name=None, view_results=False):
